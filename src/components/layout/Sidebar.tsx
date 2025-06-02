@@ -15,7 +15,7 @@ function Sidebar({ onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isLearnExpanded, setIsLearnExpanded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   
   const isActive = (path: string) => location.pathname === path;
 
@@ -77,13 +77,24 @@ function Sidebar({ onToggle }: SidebarProps) {
         setIsLearnExpanded(false);
       }}
     >
-      {/* User Profile Section */}
+      {/* Dashboard Button */}
+      <Link
+        to="/learn"
+        className={`mb-6 w-full flex items-center px-4 py-2.5 rounded-lg transition-colors ${
+          isActive('/learn')
+            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500'
+            : 'hover:bg-gray-100 dark:hover:bg-dark-border'
+        }`}
+      >
+        <Layout className="w-5 h-5 flex-shrink-0" />
+        <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+          Dashboard
+        </span>
+      </Link>
+
+      {/* User Name */}
       <div className={`mb-6 px-4 py-3 bg-gray-50 dark:bg-dark-border/30 rounded-lg transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="flex items-center">
-          <div className="ml-3">
-            <p className="font-medium truncate">{user?.user_metadata?.name}</p>
-          </div>
-        </div>
+        <p className="font-medium truncate">{user?.user_metadata?.name}</p>
       </div>
 
       <nav className="flex-1 space-y-1">
