@@ -83,12 +83,8 @@ function Sidebar({ onToggle }: SidebarProps) {
       {!isCollapsed && (
         <div className="mb-6 px-4 py-3 bg-gray-50 dark:bg-dark-border/30 rounded-lg">
           <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-500 flex items-center justify-center font-semibold text-lg">
-              {user?.user_metadata?.name?.charAt(0).toUpperCase()}
-            </div>
             <div className="ml-3">
               <p className="font-medium truncate">{user?.user_metadata?.name}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
             </div>
           </div>
         </div>
