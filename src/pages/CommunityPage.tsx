@@ -1,217 +1,669 @@
 import { useEffect, useState } from 'react';
-import { Users, MessageSquare, BookOpen, Calendar, UserPlus, Award, ArrowRight } from 'lucide-react';
+import { Search, Filter, Clock, Users, ChevronRight, Star, Plus, X, Edit, Eye, MessageSquare } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import SearchBar from '../components/search/SearchBar';
 import FilterBar from '../components/search/FilterBar';
 import { useSearchFilter } from '../hooks/useSearchFilter';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+
+interface StudyGroup {
+  id: string;
+  title: string;
+  description: string;
+  leader_id: string;
+  schedule: string;
+  max_members: number;
+  level: string;
+  category: string;
+  tags: string[];
+  status: string;
+  created_at: string;
+  leader_name?: string;
+}
+
+interface StudyGroupMember {
+  group_id: string;
+  user_id: string;
+  role: string;
+}
 
 function CommunityPage() {
-  const [studyGroups] = useState([
-    {
-      id: 1,
-      title: 'JavaScript Bootcamp',
-      description: 'Intensive 8-week program covering JavaScript fundamentals through advanced concepts.',
-      leader: 'Sarah Chen',
-      schedule: 'Tuesdays & Thursdays',
-      members: 12,
-      maxMembers: 20,
-      status: 'open',
-      tags: ['JavaScript', 'Web Development'],
-      level: 'intermediate'
-    },
-    {
-      id: 2,
-      title: 'Java Development Group',
-      description: 'Weekly sessions focusing on Java programming and problem-solving.',
-      leader: 'Michael Obi',
-      schedule: 'Every Saturday',
-      members: 18,
-      maxMembers: 20,
-      status: 'almost-full',
-      tags: ['Java', 'Backend'],
-      level: 'advanced'
-    },
-    {
-      id: 3,
-      title: 'Python for Beginners',
-      description: 'Learn Python basics with hands-on exercises and projects.',
-      leader: 'Emma Wilson',
-      schedule: 'Mondays & Wednesdays',
-      members: 8,
-      maxMembers: 15,
-      status: 'open',
-      tags: ['Python', 'Programming'],
-      level: 'beginner'
-    }
-  ]);
+  const { user } = useAuth();
+  const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([]);
+  const [members, setMembers] = useState<StudyGroupMember[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<StudyGroup | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [groupForm, setGroupForm] = useState({
+    title: '',
+    description: '',
+    schedule: '',
+    max_members: 1,
+    level: 'beginner',
+    category: '',
+    tags: [] as string[]
+  });
 
   const filteredGroups = useSearchFilter(studyGroups, ['title', 'description', 'tags']);
 
   useEffect(() => {
     document.title = 'Community | LearnFlow';
+    loadStudyGroups();
+    loadMembers();
   }, []);
+
+  const loadStudyGroups = async () => {
+    try {
+      const { data: groupsData, error: groupsError } = await supabase
+        .from('study_groups')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (groupsError) throw groupsError;
+
+      const leaderIds = [...new Set(groupsData?.map(g => g.leader_id) || [])];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', leaderIds);
+
+      if (profilesError) throw profilesError;
+
+      const leaderMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
+
+      const groupsWithLeaderNames = groupsData?.map(group => ({
+        ...group,
+        leader_name: leaderMap.get(group.leader_id) || 'Unknown'
+      }));
+
+      setStudyGroups(groupsWithLeaderNames || []);
+    } catch (error) {
+      console.error('Error loading study groups:', error);
+    }
+  };
+
+  const loadMembers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('study_group_members')
+        .select('*');
+
+      if (error) throw error;
+      setMembers(data || []);
+    } catch (error) {
+      console.error('Error loading members:', error);
+    }
+  };
+
+  const handleGroupAction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      if (!groupForm.title || !groupForm.description || !groupForm.category || !groupForm.schedule) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      if (groupForm.description.length < 200) {
+        throw new Error('Description must be at least 200 characters long');
+      }
+
+      if (isEditing && selectedGroup) {
+        const { error } = await supabase
+          .from('study_groups')
+          .update({
+            ...groupForm,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', selectedGroup.id);
+
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from('study_groups')
+          .insert([
+            {
+              ...groupForm,
+              leader_id: user?.id,
+              status: 'open'
+            }
+          ])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const { error: memberError } = await supabase
+          .from('study_group_members')
+          .insert([
+            {
+              group_id: data.id,
+              user_id: user?.id,
+              role: 'leader'
+            }
+          ]);
+
+        if (memberError) throw memberError;
+      }
+
+      setGroupForm({
+        title: '',
+        description: '',
+        schedule: '',
+        max_members: 1,
+        level: 'beginner',
+        category: '',
+        tags: []
+      });
+      setIsModalOpen(false);
+      setIsDetailsModalOpen(false);
+      setSelectedGroup(null);
+      setIsEditing(false);
+
+      await Promise.all([loadStudyGroups(), loadMembers()]);
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleViewDetails = (group: StudyGroup) => {
+    setSelectedGroup(group);
+    setIsDetailsModalOpen(true);
+    setIsEditing(false);
+  };
+
+  const handleEditGroup = (group: StudyGroup) => {
+    setSelectedGroup(group);
+    setGroupForm({
+      title: group.title,
+      description: group.description,
+      schedule: group.schedule,
+      max_members: group.max_members,
+      level: group.level,
+      category: group.category,
+      tags: group.tags
+    });
+    setIsModalOpen(true);
+    setIsEditing(true);
+  };
+
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      const { error } = await supabase
+        .from('study_group_members')
+        .insert([
+          {
+            group_id: groupId,
+            user_id: user?.id,
+            role: 'member'
+          }
+        ]);
+
+      if (error) throw error;
+      await loadMembers();
+    } catch (error) {
+      console.error('Error joining group:', error);
+    }
+  };
+
+  const isGroupLeader = (groupLeaderId: string) => {
+    return user?.id === groupLeaderId;
+  };
+
+  const isGroupMember = (groupId: string) => {
+    return members.some(m => m.group_id === groupId && m.user_id === user?.id);
+  };
+
+  const getCurrentMemberCount = (groupId: string) => {
+    return members.filter(m => m.group_id === groupId).length;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && e.currentTarget.value) {
+      e.preventDefault();
+      const newTag = e.currentTarget.value.trim();
+      if (newTag && !groupForm.tags.includes(newTag)) {
+        setGroupForm({
+          ...groupForm,
+          tags: [...groupForm.tags, newTag]
+        });
+        e.currentTarget.value = '';
+      }
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setGroupForm({
+      ...groupForm,
+      tags: groupForm.tags.filter(tag => tag !== tagToRemove)
+    });
+  };
 
   return (
     <DashboardLayout>
-      {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Community</h1>
-        <p className="text-light-text-secondary dark:text-dark-text-secondary">
-          Connect with other learners and join study groups
-        </p>
-      </div>
-      
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <div className="card">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mr-4">
-              <Users className="w-6 h-6 text-primary-500" />
-            </div>
-            <div>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                Community Members
-              </p>
-              <p className="text-2xl font-bold">50,000+</p>
-            </div>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Community</h1>
+            <p className="text-light-text-secondary dark:text-dark-text-secondary">
+              Join study groups and connect with other learners
+            </p>
           </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mr-4">
-              <BookOpen className="w-6 h-6 text-primary-500" />
-            </div>
-            <div>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                Study Groups
-              </p>
-              <p className="text-2xl font-bold">320+</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mr-4">
-              <MessageSquare className="w-6 h-6 text-primary-500" />
-            </div>
-            <div>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                Active Discussions
-              </p>
-              <p className="text-2xl font-bold">1,200+</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mr-4">
-              <Award className="w-6 h-6 text-primary-500" />
-            </div>
-            <div>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                Active Mentors
-              </p>
-              <p className="text-2xl font-bold">150+</p>
-            </div>
-          </div>
+          <button
+            onClick={() => {
+              setIsModalOpen(true);
+              setIsEditing(false);
+              setGroupForm({
+                title: '',
+                description: '',
+                schedule: '',
+                max_members: 1,
+                level: 'beginner',
+                category: '',
+                tags: []
+              });
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Create Study Group
+          </button>
         </div>
       </div>
 
-      {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <SearchBar placeholder="Search study groups..." />
         <FilterBar 
           options={{
             levels: ['beginner', 'intermediate', 'advanced'],
             categories: ['programming', 'web-development', 'data-science', 'mobile-dev'],
-            sortOptions: ['newest', 'popular', 'availability']
+            sortOptions: ['newest', 'popular']
           }}
         />
       </div>
-      
-      {/* Study Groups */}
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Study Groups</h2>
-          <button className="btn-primary btn-sm">
-            Create New Group
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredGroups.map(group => (
-            <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mr-4">
-                    <BookOpen className="w-6 h-6 text-primary-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">{group.title}</h3>
-                    <p className="text-light-text-secondary dark:text-dark-text-secondary">
-                      Led by {group.leader}
-                    </p>
-                  </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredGroups.map(group => (
+          <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
+            <div className="mb-4">
+              <div className="flex justify-between items-start">
+                <div className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full px-3 py-1 text-xs font-medium">
+                  {group.level}
                 </div>
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                  group.status === 'open' 
-                    ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                    : 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                }`}>
-                  {group.status === 'open' ? 'Open' : 'Almost Full'}
-                </span>
+                {isGroupLeader(group.leader_id) && (
+                  <button 
+                    onClick={() => handleEditGroup(group)}
+                    className="text-gray-500 hover:text-primary-500 transition-colors"
+                  >
+                    <Edit className="w-5 h-5" />
+                  </button>
+                )}
               </div>
-              
-              <p className="text-light-text-secondary dark:text-dark-text-secondary mb-4">
+              <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
                 {group.description}
               </p>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {group.tags.map(tag => (
-                  <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
-                    {tag}
-                  </span>
-                ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {group.tags.map(tag => (
+                <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center">
+                <Clock className="w-4 h-4 text-gray-500 mr-1" />
+                <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  {group.schedule}
+                </span>
               </div>
-              
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center">
-                  <Calendar className="w-4 h-4 text-gray-500 mr-1" />
-                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    {group.schedule}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 text-gray-500 mr-1" />
-                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    {group.members}/{group.maxMembers} members
-                  </span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-500" />
+                <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                  {getCurrentMemberCount(group.id)}/{group.max_members}
+                </span>
               </div>
-              
-              <button className="btn-primary w-full flex items-center justify-center">
-                <UserPlus className="w-5 h-5 mr-2" /> Join Group
+            </div>
+
+            <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
+              <p>Led by {group.leader_name}</p>
+              <p>Created on {formatDate(group.created_at)}</p>
+            </div>
+
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handleViewDetails(group)}
+                className="btn-secondary flex-1 flex items-center justify-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                View Details
+              </button>
+
+              {!isGroupLeader(group.leader_id) && !isGroupMember(group.id) && (
+                <button 
+                  onClick={() => handleJoinGroup(group.id)}
+                  className="btn-primary flex-1"
+                  disabled={getCurrentMemberCount(group.id) >= group.max_members}
+                >
+                  {getCurrentMemberCount(group.id) >= group.max_members ? 'Full' : 'Join Group'}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Create/Edit Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-dark-border flex justify-between items-center">
+              <h2 className="text-2xl font-bold">{isEditing ? 'Edit Study Group' : 'Create Study Group'}</h2>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setIsEditing(false);
+                  setSelectedGroup(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-6 h-6" />
               </button>
             </div>
-          ))}
+
+            <form onSubmit={handleGroupAction} className="p-6">
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium mb-1">
+                    Group Title *
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    value={groupForm.title}
+                    onChange={(e) => setGroupForm({...groupForm, title: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium mb-1">
+                    Description * (minimum 200 characters)
+                  </label>
+                  <textarea
+                    id="description"
+                    value={groupForm.description}
+                    onChange={(e) => setGroupForm({...groupForm, description: e.target.value})}
+                    rows={6}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                    required
+                    minLength={200}
+                    placeholder="Provide a detailed description of your study group (minimum 200 characters)"
+                  ></textarea>
+                  <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {groupForm.description.length}/200 characters
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="level" className="block text-sm font-medium mb-1">
+                      Level *
+                    </label>
+                    <select
+                      id="level"
+                      value={groupForm.level}
+                      onChange={(e) => setGroupForm({...groupForm, level: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
+                    >
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="category" className="block text-sm font-medium mb-1">
+                      Category *
+                    </label>
+                    <select
+                      id="category"
+                      value={groupForm.category}
+                      onChange={(e) => setGroupForm({...groupForm, category: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
+                    >
+                      <option value="">Select category</option>
+                      <option value="programming">Programming</option>
+                      <option value="web-development">Web Development</option>
+                      <option value="mobile-dev">Mobile Development</option>
+                      <option value="data-science">Data Science</option>
+                      <option value="machine-learning">Machine Learning</option>
+                      <option value="devops">DevOps</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="schedule" className="block text-sm font-medium mb-1">
+                      Schedule *
+                    </label>
+                    <input
+                      type="text"
+                      id="schedule"
+                      value={groupForm.schedule}
+                      onChange={(e) => setGroupForm({...groupForm, schedule: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="e.g., Every Monday at 7 PM EST"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="max_members" className="block text-sm font-medium mb-1">
+                      Max Members *
+                    </label>
+                    <input
+                      type="number"
+                      id="max_members"
+                      value={groupForm.max_members}
+                      onChange={(e) => setGroupForm({...groupForm, max_members: parseInt(e.target.value)})}
+                      min="1"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="tags" className="block text-sm font-medium mb-1">
+                    Tags (Press Enter to add)
+                  </label>
+                  <input
+                    type="text"
+                    id="tags"
+                    onKeyDown={handleTagInput}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="e.g., JavaScript, React"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {groupForm.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-2 py-1 rounded-full text-sm flex items-center gap-1"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="hover:text-primary-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setIsEditing(false);
+                    setSelectedGroup(null);
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn-primary"
+                >
+                  {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Group'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-      
-      {/* Community CTA */}
-      <div className="bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl p-8">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Start Your Own Study Group</h2>
-          <p className="text-lg mb-6 opacity-90">
-            Have a specific topic you'd like to study with others? Create your own study group and invite fellow learners.
-          </p>
-          <button className="btn bg-white text-primary-500 hover:bg-gray-100 transition-colors">
-            Create Study Group
-          </button>
+      )}
+
+      {/* Details Modal */}
+      {isDetailsModalOpen && selectedGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-dark-border flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Study Group Details</h2>
+              <button
+                onClick={() => {
+                  setIsDetailsModalOpen(false);
+                  setSelectedGroup(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <div className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full px-3 py-1 text-xs font-medium mb-2">
+                    {selectedGroup.level}
+                  </div>
+                  <h3 className="text-2xl font-bold">{selectedGroup.title}</h3>
+                </div>
+                {isGroupLeader(selectedGroup.leader_id) && (
+                  <button 
+                    onClick={() => {
+                      handleEditGroup(selectedGroup);
+                      setIsDetailsModalOpen(false);
+                    }}
+                    className="btn-secondary flex items-center gap-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit Group
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-semibold mb-2">Description</h4>
+                  <p className="text-light-text-secondary dark:text-dark-text-secondary whitespace-pre-wrap break-words">
+                    {selectedGroup.description}
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Topics</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedGroup.tags.map(tag => (
+                      <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-sm">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-2">Group Details</h4>
+                    <ul className="space-y-2 text-light-text-secondary dark:text-dark-text-secondary">
+                      <li className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Schedule: {selectedGroup.schedule}
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Members: {getCurrentMemberCount(selectedGroup.id)}/{selectedGroup.max_members}
+                      </li>
+                      <li>Category: {selectedGroup.category}</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Leader Information</h4>
+                    <ul className="space-y-2 text-light-text-secondary dark:text-dark-text-secondary">
+                      <li>Led by: {selectedGroup.leader_name}</li>
+                      <li>Created on: {formatDate(selectedGroup.created_at)}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {!isGroupLeader(selectedGroup.leader_id) && !isGroupMember(selectedGroup.id) && (
+                  <div className="mt-8">
+                    <button 
+                      onClick={() => {
+                        handleJoinGroup(selectedGroup.id);
+                        setIsDetailsModalOpen(false);
+                      }}
+                      className="btn-primary w-full"
+                      disabled={getCurrentMemberCount(selectedGroup.id) >= selectedGroup.max_members}
+                    >
+                      {getCurrentMemberCount(selectedGroup.id) >= selectedGroup.max_members ? 'Group is Full' : 'Join Group'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </DashboardLayout>
   );
 }
