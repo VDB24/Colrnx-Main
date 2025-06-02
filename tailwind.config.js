@@ -1,13 +1,17 @@
+import defaultTheme from 'tailwindcss/defaultTheme';
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
-  darkMode: 'class',
-  safelist: [
-    'hover:shadow-glow-light',
-    'dark:hover:shadow-glow-dark'
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Bricolage Grotesque', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         primary: {
           50: '#f0f9ff',
@@ -54,8 +58,6 @@ export default {
         'neu-dark-sm': '5px 5px 10px #1a2334, -5px -5px 10px #222f42',
         'neu-dark-pressed': 'inset 6px 6px 12px #1a2334, inset -6px -6px 12px #222f42',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
-        'glow-light': '0 0 20px rgba(14, 165, 233, 0.3), 0 0 40px rgba(14, 165, 233, 0.1)',
-        'glow-dark': '0 0 20px rgba(14, 165, 233, 0.2), 0 0 40px rgba(14, 165, 233, 0.1)',
       },
     },
   },
