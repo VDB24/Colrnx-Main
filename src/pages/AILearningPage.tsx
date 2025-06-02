@@ -35,8 +35,8 @@ function AILearningPage() {
           </div>
         </div>
 
-        {/* Message Input */}
-        <div className="border-t border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-4 lg:px-8 py-4">
+        {/* Message Input - Now fixed to bottom */}
+        <div className="sticky bottom-0 border-t border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card px-4 lg:px-8 py-4">
           <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="flex gap-4">
               <input
