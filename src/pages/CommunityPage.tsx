@@ -31,6 +31,8 @@ interface StudyGroupMember {
 function CommunityPage() {
   const { user } = useAuth();
   const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([]);
+  const [yourCommunities, setYourCommunities] = useState<StudyGroup[]>([]);
+  const [exploreCommunities, setExploreCommunities] = useState<StudyGroup[]>([]);
   const [members, setMembers] = useState<StudyGroupMember[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -38,8 +40,6 @@ function CommunityPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [yourCommunities, setYourCommunities] = useState<StudyGroup[]>([]);
-  const [exploreCommunities, setExploreCommunities] = useState<StudyGroup[]>([]);
 
   const [groupForm, setGroupForm] = useState({
     title: '',
@@ -51,7 +51,7 @@ function CommunityPage() {
     tags: [] as string[]
   });
 
-  const filteredGroups = useSearchFilter(studyGroups, ['title', 'description', 'tags']);
+  const filteredGroups = useSearchFilter(exploreCommunities, ['title', 'description', 'tags']);
 
   const getDifficultyColor = (level: string) => {
     switch (level) {
@@ -244,7 +244,7 @@ function CommunityPage() {
         ]);
 
       if (error) throw error;
-      await loadMembers();
+      await Promise.all([loadStudyGroups(), loadMembers()]);
     } catch (error) {
       console.error('Error joining group:', error);
     }
@@ -388,16 +388,6 @@ function CommunityPage() {
                   <Eye className="w-4 h-4" />
                   View Details
                 </button>
-
-                {!isGroupLeader(group.leader_id) && !isGroupMember(group.id) && (
-                  <button 
-                    onClick={() => handleJoinGroup(group.id)}
-                    className="btn-primary flex-1"
-                    disabled={getCurrentMemberCount(group.id) >= group.max_members}
-                  >
-                    {getCurrentMemberCount(group.id) >= group.max_members ? 'Full' : 'Join Group'}
-                  </button>
-                )}
               </div>
             </div>
           ))}
@@ -426,7 +416,7 @@ function CommunityPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exploreCommunities.map(group => (
+          {filteredGroups.map(group => (
             <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
               <div className="mb-4">
                 <div className="flex justify-between items-start">
