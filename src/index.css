@@ -36,6 +36,12 @@
   }
 }
 
+@layer utilities {
+  .backdrop-blur-glass {
+    @apply backdrop-blur-md;
+  }
+}
+
 @layer components {
   .container {
     @apply px-4 mx-auto max-w-7xl;
@@ -58,19 +64,19 @@
   }
 
   .card {
-    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-glass rounded-xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20 transition-all duration-300 hover:shadow-glass-hover;
+    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md rounded-xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20 transition-all duration-300 hover:shadow-glass-hover;
   }
 
   .glass-effect {
-    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-glass shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20;
+    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20;
   }
 
   .glass-card {
-    @apply bg-white/90 dark:bg-dark-card/90 backdrop-blur-glass rounded-xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20 transition-all duration-300 hover:shadow-glass-hover;
+    @apply bg-white/90 dark:bg-dark-card/90 backdrop-blur-md rounded-xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20 transition-all duration-300 hover:shadow-glass-hover;
   }
 
   .glass-input {
-    @apply bg-white/70 dark:bg-dark-bg/70 backdrop-blur-glass border border-white/20 dark:border-dark-border/20 focus:ring-2 focus:ring-primary-500/50;
+    @apply bg-white/70 dark:bg-dark-bg/70 backdrop-blur-md border border-white/20 dark:border-dark-border/20 focus:ring-2 focus:ring-primary-500/50;
   }
 
   .animate-slide-up {
