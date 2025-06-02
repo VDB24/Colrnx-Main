@@ -51,6 +51,19 @@ function CommunityPage() {
 
   const filteredGroups = useSearchFilter(studyGroups, ['title', 'description', 'tags']);
 
+  const getDifficultyColor = (level: string) => {
+    switch (level) {
+      case 'beginner':
+        return 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400';
+      case 'intermediate':
+        return 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400';
+      case 'advanced':
+        return 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+      default:
+        return 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400';
+    }
+  };
+
   useEffect(() => {
     document.title = 'Community | LearnFlow';
     loadStudyGroups();
@@ -303,7 +316,7 @@ function CommunityPage() {
           <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
             <div className="mb-4">
               <div className="flex justify-between items-start">
-                <div className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full px-3 py-1 text-xs font-medium">
+                <div className={`inline-block ${getDifficultyColor(group.level)} rounded-full px-3 py-1 text-xs font-medium`}>
                   {group.level}
                 </div>
                 {isGroupLeader(group.leader_id) && (
@@ -582,7 +595,7 @@ function CommunityPage() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <div className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full px-3 py-1 text-xs font-medium mb-2">
+                  <div className={`inline-block ${getDifficultyColor(selectedGroup.level)} rounded-full px-3 py-1 text-xs font-medium mb-2`}>
                     {selectedGroup.level}
                   </div>
                   <h3 className="text-2xl font-bold">{selectedGroup.title}</h3>
