@@ -13,283 +13,145 @@ function DashboardPage() {
   return (
     <DashboardLayout>
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-primary-500 to-primary-700 text-white rounded-xl p-8 mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.user_metadata?.name}!</h1>
-            <p className="opacity-90 text-lg">Ready to continue your learning journey?</p>
-          </div>
-          <div className="mt-4 md:mt-0 flex items-center">
-            <div className="mr-6">
-              <p className="text-sm opacity-90">Learning streak</p>
-              <p className="text-2xl font-bold">5 days</p>
+      <div className="bg-gradient-to-r from-primary-500 to-primary-700 text-white rounded-2xl p-10 mb-12">
+        <div className="max-w-4xl">
+          <h1 className="text-4xl font-bold mb-4">Welcome back, {user?.user_metadata?.name}!</h1>
+          <p className="text-xl opacity-90">Continue your learning journey today</p>
+        </div>
+      </div>
+      
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Learning Streak</h3>
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+              <Award className="w-6 h-6 text-primary-500" />
             </div>
-            <div>
-              <p className="text-sm opacity-90">XP earned</p>
-              <p className="text-2xl font-bold">1,240</p>
+          </div>
+          <p className="text-3xl font-bold">5 days</p>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">Keep it up!</p>
+        </div>
+
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Hours Learned</h3>
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-primary-500" />
             </div>
           </div>
+          <p className="text-3xl font-bold">12.5</p>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">This week</p>
+        </div>
+
+        <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Courses</h3>
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-primary-500" />
+            </div>
+          </div>
+          <p className="text-3xl font-bold">3</p>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary mt-1">In progress</p>
         </div>
       </div>
       
       {/* Continue Learning Section */}
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-6">
+      <div className="mb-16">
+        <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold">Continue Learning</h2>
           <button className="text-primary-500 hover:text-primary-600 transition-colors flex items-center">
-            View all <ArrowRight className="w-4 h-4 ml-1" />
+            View all courses <ArrowRight className="w-4 h-4 ml-2" />
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Course Card 1 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="relative mb-4">
-              <img
-                src="https://images.pexels.com/photos/7014337/pexels-photo-7014337.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="JavaScript Fundamentals"
-                className="w-full h-40 object-cover rounded-lg"
-              />
-              <div className="absolute top-3 right-3 bg-white dark:bg-dark-card px-2 py-1 rounded-md text-xs font-medium">
-                40% Complete
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-2">JavaScript Fundamentals</h3>
+                <p className="text-light-text-secondary dark:text-dark-text-secondary">
+                  Module 3: Functions & Objects
+                </p>
+              </div>
+              <div className="w-16 h-16 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-primary-500" />
               </div>
             </div>
             
-            <h3 className="text-lg font-semibold mb-2">JavaScript Fundamentals</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-3">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>14 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>3 hours left</span>
-            </div>
-            
-            <div className="mb-4">
-              <div className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
+            <div className="mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span>Progress</span>
+                <span className="text-primary-500">40%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
                 <div className="bg-primary-500 h-full rounded-full" style={{width: '40%'}}></div>
               </div>
             </div>
             
             <button className="btn-primary w-full">Continue Learning</button>
           </div>
-          
-          {/* Course Card 2 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="relative mb-4">
-              <img
-                src="https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="React Hooks Mastery"
-                className="w-full h-40 object-cover rounded-lg"
-              />
-              <div className="absolute top-3 right-3 bg-white dark:bg-dark-card px-2 py-1 rounded-md text-xs font-medium">
-                25% Complete
+
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold mb-2">React Essentials</h3>
+                <p className="text-light-text-secondary dark:text-dark-text-secondary">
+                  Module 2: Components & Props
+                </p>
+              </div>
+              <div className="w-16 h-16 rounded-xl bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-primary-500" />
               </div>
             </div>
             
-            <h3 className="text-lg font-semibold mb-2">React Hooks Mastery</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-3">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>8 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>5 hours left</span>
-            </div>
-            
-            <div className="mb-4">
-              <div className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
+            <div className="mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span>Progress</span>
+                <span className="text-primary-500">25%</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 dark:bg-dark-border rounded-full overflow-hidden">
                 <div className="bg-primary-500 h-full rounded-full" style={{width: '25%'}}></div>
               </div>
             </div>
             
             <button className="btn-primary w-full">Continue Learning</button>
           </div>
-          
-          {/* Course Card 3 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="relative mb-4">
-              <img
-                src="https://images.pexels.com/photos/5483077/pexels-photo-5483077.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="Data Structures & Algorithms"
-                className="w-full h-40 object-cover rounded-lg"
-              />
-              <div className="absolute top-3 right-3 bg-white dark:bg-dark-card px-2 py-1 rounded-md text-xs font-medium">
-                60% Complete
-              </div>
-            </div>
-            
-            <h3 className="text-lg font-semibold mb-2">Data Structures & Algorithms</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-3">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>20 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>8 hours left</span>
-            </div>
-            
-            <div className="mb-4">
-              <div className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
-                <div className="bg-primary-500 h-full rounded-full" style={{width: '60%'}}></div>
-              </div>
-            </div>
-            
-            <button className="btn-primary w-full">Continue Learning</button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Recommended Section */}
-      <div className="mb-12">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Recommended For You</h2>
-          <button className="text-primary-500 hover:text-primary-600 transition-colors flex items-center">
-            View all <ArrowRight className="w-4 h-4 ml-1" />
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Recommended Course 1 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="mb-4">
-              <img
-                src="https://images.pexels.com/photos/7988079/pexels-photo-7988079.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="TypeScript Essentials"
-                className="w-full h-32 object-cover rounded-lg"
-              />
-            </div>
-            
-            <h3 className="text-lg font-semibold mb-2">TypeScript Essentials</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-4">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>12 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>6 hours</span>
-            </div>
-            
-            <button className="btn-secondary w-full">Start Learning</button>
-          </div>
-          
-          {/* Recommended Course 2 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="mb-4">
-              <img
-                src="https://images.pexels.com/photos/5483071/pexels-photo-5483071.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="Responsive Web Design"
-                className="w-full h-32 object-cover rounded-lg"
-              />
-            </div>
-            
-            <h3 className="text-lg font-semibold mb-2">Responsive Web Design</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-4">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>10 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>5 hours</span>
-            </div>
-            
-            <button className="btn-secondary w-full">Start Learning</button>
-          </div>
-          
-          {/* Recommended Course 3 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="mb-4">
-              <img
-                src="https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="Node.js Backend Development"
-                className="w-full h-32 object-cover rounded-lg"
-              />
-            </div>
-            
-            <h3 className="text-lg font-semibold mb-2">Node.js Backend Development</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-4">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>16 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>8 hours</span>
-            </div>
-            
-            <button className="btn-secondary w-full">Start Learning</button>
-          </div>
-          
-          {/* Recommended Course 4 */}
-          <div className="card hover:shadow-lg transition-all duration-300">
-            <div className="mb-4">
-              <img
-                src="https://images.pexels.com/photos/5926382/pexels-photo-5926382.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-                alt="Cloud Computing Fundamentals"
-                className="w-full h-32 object-cover rounded-lg"
-              />
-            </div>
-            
-            <h3 className="text-lg font-semibold mb-2">Cloud Computing Fundamentals</h3>
-            <div className="flex items-center text-light-text-secondary dark:text-dark-text-secondary text-sm mb-4">
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span>14 lessons</span>
-              <span className="mx-2">•</span>
-              <Clock className="w-4 h-4 mr-1" />
-              <span>7 hours</span>
-            </div>
-            
-            <button className="btn-secondary w-full">Start Learning</button>
-          </div>
         </div>
       </div>
       
       {/* Recent Achievements */}
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Recent Achievements</h2>
-          <button className="text-primary-500 hover:text-primary-600 transition-colors flex items-center">
-            View all <ArrowRight className="w-4 h-4 ml-1" />
-          </button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Achievement 1 */}
-          <div className="card flex items-center">
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                <Award className="w-8 h-8 text-primary-500" />
-              </div>
+        <h2 className="text-2xl font-bold mb-8">Recent Achievements</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+            <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mb-6">
+              <Award className="w-8 h-8 text-primary-500" />
             </div>
-            <div>
-              <h3 className="font-semibold mb-1">5-Day Streak</h3>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                You've been learning for 5 consecutive days!
-              </p>
-            </div>
+            <h3 className="text-xl font-semibold mb-2">5-Day Streak</h3>
+            <p className="text-light-text-secondary dark:text-dark-text-secondary">
+              You've been learning consistently for 5 days!
+            </p>
           </div>
-          
-          {/* Achievement 2 */}
-          <div className="card flex items-center">
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                <Award className="w-8 h-8 text-primary-500" />
-              </div>
+
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+            <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mb-6">
+              <Award className="w-8 h-8 text-primary-500" />
             </div>
-            <div>
-              <h3 className="font-semibold mb-1">JavaScript Basics</h3>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                Completed JavaScript Fundamentals Module 1
-              </p>
-            </div>
+            <h3 className="text-xl font-semibold mb-2">First Project</h3>
+            <p className="text-light-text-secondary dark:text-dark-text-secondary">
+              Completed your first coding project
+            </p>
           </div>
-          
-          {/* Achievement 3 */}
-          <div className="card flex items-center">
-            <div className="flex-shrink-0 mr-4">
-              <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
-                <Award className="w-8 h-8 text-primary-500" />
-              </div>
+
+          <div className="bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm">
+            <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mb-6">
+              <Award className="w-8 h-8 text-primary-500" />
             </div>
-            <div>
-              <h3 className="font-semibold mb-1">First Project</h3>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                Completed your first coding project
-              </p>
-            </div>
+            <h3 className="text-xl font-semibold mb-2">JavaScript Basics</h3>
+            <p className="text-light-text-secondary dark:text-dark-text-secondary">
+              Completed JavaScript Fundamentals Module 1
+            </p>
           </div>
         </div>
       </div>
