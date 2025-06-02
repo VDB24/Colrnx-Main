@@ -26,6 +26,11 @@ function Sidebar({ onToggle }: SidebarProps) {
   
   const navItems = [
     {
+      name: 'Dashboard',
+      path: '/learn',
+      icon: Layout
+    },
+    {
       name: 'Learn',
       path: '/learn',
       icon: GraduationCap,
@@ -77,21 +82,6 @@ function Sidebar({ onToggle }: SidebarProps) {
         setIsLearnExpanded(false);
       }}
     >
-      {/* Dashboard Button */}
-      <Link
-        to="/learn"
-        className={`mb-6 w-full flex items-center px-4 py-2.5 rounded-lg transition-colors ${
-          isActive('/learn')
-            ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500'
-            : 'hover:bg-gray-100 dark:hover:bg-dark-border'
-        }`}
-      >
-        <Layout className="w-5 h-5 flex-shrink-0" />
-        <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
-          Dashboard
-        </span>
-      </Link>
-
       {/* User Name */}
       <div className={`mb-6 px-4 py-3 bg-gray-50 dark:bg-dark-border/30 rounded-lg transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
         <p className="font-medium truncate">{user?.user_metadata?.name}</p>
