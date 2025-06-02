@@ -38,7 +38,6 @@ function ProjectsPage() {
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   
-  // Project form state
   const [projectForm, setProjectForm] = useState({
     title: '',
     description: '',
@@ -59,7 +58,6 @@ function ProjectsPage() {
 
   const loadProjects = async () => {
     try {
-      // First, get all projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -67,7 +65,6 @@ function ProjectsPage() {
 
       if (projectsError) throw projectsError;
 
-      // Then, get creator profiles for these projects
       const creatorIds = [...new Set(projectsData?.map(p => p.created_by) || [])];
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -76,10 +73,8 @@ function ProjectsPage() {
 
       if (profilesError) throw profilesError;
 
-      // Create a map of creator IDs to names
       const creatorMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
 
-      // Combine project data with creator names
       const projectsWithCreatorNames = projectsData?.map(project => ({
         ...project,
         creator_name: creatorMap.get(project.created_by) || 'Unknown'
@@ -110,7 +105,6 @@ function ProjectsPage() {
     setIsSubmitting(true);
 
     try {
-      // Validate form
       if (!projectForm.title || !projectForm.description || !projectForm.category) {
         throw new Error('Please fill in all required fields');
       }
@@ -120,7 +114,6 @@ function ProjectsPage() {
       }
 
       if (isEditing && selectedProject) {
-        // Update existing project
         const { error } = await supabase
           .from('projects')
           .update({
@@ -131,7 +124,6 @@ function ProjectsPage() {
 
         if (error) throw error;
       } else {
-        // Create new project
         const { data, error } = await supabase
           .from('projects')
           .insert([
@@ -145,7 +137,6 @@ function ProjectsPage() {
 
         if (error) throw error;
 
-        // Add creator as first participant
         const { error: participantError } = await supabase
           .from('project_participants')
           .insert([
@@ -159,7 +150,6 @@ function ProjectsPage() {
         if (participantError) throw participantError;
       }
 
-      // Reset form and close modal
       setProjectForm({
         title: '',
         description: '',
@@ -174,7 +164,6 @@ function ProjectsPage() {
       setSelectedProject(null);
       setIsEditing(false);
 
-      // Reload projects and participants
       await Promise.all([loadProjects(), loadParticipants()]);
     } catch (error: any) {
       setError(error.message);
@@ -262,7 +251,6 @@ function ProjectsPage() {
 
   return (
     <DashboardLayout>
-      {/* Page Header */}
       <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
@@ -293,7 +281,6 @@ function ProjectsPage() {
         </div>
       </div>
       
-      {/* Search and Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <SearchBar placeholder="Search projects..." />
         <FilterBar 
@@ -305,7 +292,6 @@ function ProjectsPage() {
         />
       </div>
 
-      {/* Projects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.map(project => (
           <div key={project.id} className="card hover:shadow-lg transition-all duration-300">
@@ -326,9 +312,11 @@ function ProjectsPage() {
               <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
             </div>
             
-            <p className="text-light-text-secondary dark:text-dark-text-secondary mb-4 line-clamp-3">
-              {project.description}
-            </p>
+            <div className="mb-4">
+              <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
+                {project.description}
+              </p>
+            </div>
             
             <div className="flex flex-wrap gap-2 mb-4">
               {project.tags.map(tag => (
@@ -380,7 +368,6 @@ function ProjectsPage() {
         ))}
       </div>
 
-      {/* Project Details Modal */}
       {isDetailsModalOpen && selectedProject && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -422,7 +409,7 @@ function ProjectsPage() {
               <div className="space-y-6">
                 <div>
                   <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-light-text-secondary dark:text-dark-text-secondary whitespace-pre-wrap">
+                  <p className="text-light-text-secondary dark:text-dark-text-secondary whitespace-pre-wrap break-words">
                     {selectedProject.description}
                   </p>
                 </div>
@@ -482,7 +469,6 @@ function ProjectsPage() {
         </div>
       )}
 
-      {/* Project Form Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -531,9 +517,10 @@ function ProjectsPage() {
                     value={projectForm.description}
                     onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
                     rows={6}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                     required
                     minLength={200}
+                    placeholder="Provide a detailed description of your project (minimum 200 characters)"
                   ></textarea>
                   <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
                     {projectForm.description.length}/200 characters
