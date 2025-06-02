@@ -46,11 +46,43 @@
   }
 
   .btn-primary {
-    @apply btn bg-primary-500 text-white hover:shadow-neu-light dark:hover:shadow-neu-dark active:shadow-neu-light-pressed dark:active:shadow-neu-dark-pressed;
+    @apply btn bg-primary-500 text-white;
+  }
+
+  .btn-primary:hover {
+    @apply shadow-neu-light;
+  }
+
+  .dark .btn-primary:hover {
+    @apply shadow-neu-dark;
+  }
+
+  .btn-primary:active {
+    @apply shadow-neu-light-pressed;
+  }
+
+  .dark .btn-primary:active {
+    @apply shadow-neu-dark-pressed;
   }
 
   .btn-secondary {
-    @apply btn bg-light-card dark:bg-dark-card text-primary-500 shadow-neu-light-sm dark:shadow-neu-dark-sm hover:shadow-neu-light dark:hover:shadow-neu-dark active:shadow-neu-light-pressed dark:active:shadow-neu-dark-pressed;
+    @apply btn bg-light-card dark:bg-dark-card text-primary-500 shadow-neu-light-sm dark:shadow-neu-dark-sm;
+  }
+
+  .btn-secondary:hover {
+    @apply shadow-neu-light;
+  }
+
+  .dark .btn-secondary:hover {
+    @apply shadow-neu-dark;
+  }
+
+  .btn-secondary:active {
+    @apply shadow-neu-light-pressed;
+  }
+
+  .dark .btn-secondary:active {
+    @apply shadow-neu-dark-pressed;
   }
 
   .btn-sm {
