@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, Users, Code, Layout, BookOpenCheck, Brain, 
-  ChevronDown, ChevronRight, Settings, LogOut
+  ChevronDown, ChevronRight, Settings, LogOut, GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -28,7 +28,7 @@ function Sidebar({ onToggle }: SidebarProps) {
     {
       name: 'Learn',
       path: '/learn',
-      icon: Layout,
+      icon: GraduationCap,
       submenu: true,
       options: [
         {
