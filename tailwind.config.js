@@ -39,9 +39,9 @@ export default {
           500: '#ef4444',
         },
         light: {
-          bg: '#F9F9F9',
-          card: '#FFFFFF',
-          border: '#E5E7EB',
+          bg: '#E4EBF5',
+          card: '#E4EBF5',
+          border: '#c8d0e7',
           text: {
             primary: '#111827',
             secondary: '#4B5563',
@@ -62,6 +62,12 @@ export default {
       },
       boxShadow: {
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+        'neu-light': '.3rem .3rem .6rem #c8d0e7, -.2rem -.2rem .5rem #FFFFFF',
+        'neu-light-sm': '.2rem .2rem .5rem #c8d0e7, -.2rem -.2rem .5rem #FFFFFF',
+        'neu-light-pressed': 'inset .2rem .2rem .5rem #c8d0e7, inset -.2rem -.2rem .5rem #FFFFFF',
+        'neu-dark': '.3rem .3rem .6rem rgba(0, 0, 0, 0.4), -.2rem -.2rem .5rem rgba(255, 255, 255, 0.1)',
+        'neu-dark-sm': '.2rem .2rem .5rem rgba(0, 0, 0, 0.4), -.2rem -.2rem .5rem rgba(255, 255, 255, 0.1)',
+        'neu-dark-pressed': 'inset .2rem .2rem .5rem rgba(0, 0, 0, 0.4), inset -.2rem -.2rem .5rem rgba(255, 255, 255, 0.1)',
       },
       keyframes: {
         'fade-in': {
