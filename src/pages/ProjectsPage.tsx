@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Clock, Users, ChevronRight, Star, StarHalf, Code, Plus, X } from 'lucide-react';
+import { Search, Filter, Clock, Users, ChevronRight, Star, StarHalf, Code, Plus, X, Edit } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import SearchBar from '../components/search/SearchBar';
 import FilterBar from '../components/search/FilterBar';
@@ -12,20 +12,25 @@ interface Project {
   title: string;
   description: string;
   tags: string[];
-  level: string;
-  duration: string;
-  rating: number;
-  reviews: number;
-  category: string;
-  max_participants?: number;
   difficulty: string;
-  estimated_hours?: number;
+  estimated_hours: number;
+  max_participants: number;
+  category: string;
   created_by: string;
+  created_at: string;
+  creator_name?: string;
+}
+
+interface ProjectParticipant {
+  project_id: string;
+  user_id: string;
+  role: string;
 }
 
 function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [participants, setParticipants] = useState<ProjectParticipant[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -35,7 +40,7 @@ function ProjectsPage() {
     title: '',
     description: '',
     difficulty: 'beginner',
-    estimated_hours: 0,
+    estimated_hours: 1,
     max_participants: 1,
     tags: [] as string[],
     category: ''
@@ -46,19 +51,39 @@ function ProjectsPage() {
   useEffect(() => {
     document.title = 'Projects | LearnFlow';
     loadProjects();
+    loadParticipants();
   }, []);
 
   const loadProjects = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
-        .select('*')
+        .select('*, profiles(name)')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setProjects(data || []);
+      if (projectsError) throw projectsError;
+
+      const projectsWithCreatorNames = projectsData?.map(project => ({
+        ...project,
+        creator_name: project.profiles?.name || 'Unknown'
+      }));
+
+      setProjects(projectsWithCreatorNames || []);
     } catch (error) {
       console.error('Error loading projects:', error);
+    }
+  };
+
+  const loadParticipants = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('project_participants')
+        .select('*');
+
+      if (error) throw error;
+      setParticipants(data || []);
+    } catch (error) {
+      console.error('Error loading participants:', error);
     }
   };
 
@@ -69,8 +94,12 @@ function ProjectsPage() {
 
     try {
       // Validate form
-      if (!newProject.title || !newProject.description) {
+      if (!newProject.title || !newProject.description || !newProject.category) {
         throw new Error('Please fill in all required fields');
+      }
+
+      if (newProject.description.length < 200) {
+        throw new Error('Description must be at least 200 characters long');
       }
 
       // Create project in Supabase
@@ -105,20 +134,55 @@ function ProjectsPage() {
         title: '',
         description: '',
         difficulty: 'beginner',
-        estimated_hours: 0,
+        estimated_hours: 1,
         max_participants: 1,
         tags: [],
         category: ''
       });
       setIsModalOpen(false);
 
-      // Reload projects
-      loadProjects();
+      // Reload projects and participants
+      await Promise.all([loadProjects(), loadParticipants()]);
     } catch (error: any) {
       setError(error.message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleJoinProject = async (projectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('project_participants')
+        .insert([
+          {
+            project_id: projectId,
+            user_id: user?.id,
+            role: 'member'
+          }
+        ]);
+
+      if (error) throw error;
+      await loadParticipants();
+    } catch (error) {
+      console.error('Error joining project:', error);
+    }
+  };
+
+  const isProjectCreator = (projectCreatorId: string) => {
+    return user?.id === projectCreatorId;
+  };
+
+  const isProjectParticipant = (projectId: string) => {
+    return participants.some(p => p.project_id === projectId && p.user_id === user?.id);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -170,7 +234,7 @@ function ProjectsPage() {
           options={{
             levels: ['beginner', 'intermediate', 'advanced'],
             categories: ['frontend', 'backend', 'fullstack', 'mobile'],
-            sortOptions: ['rating', 'newest', 'popular']
+            sortOptions: ['newest', 'popular']
           }}
         />
       </div>
@@ -180,10 +244,17 @@ function ProjectsPage() {
         {filteredProjects.map(project => (
           <div key={project.id} className="card hover:shadow-lg transition-all duration-300">
             <div className="mb-4">
-              <div className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full px-3 py-1 text-xs font-medium mb-2">
-                {project.difficulty}
+              <div className="flex justify-between items-start">
+                <div className="inline-block bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full px-3 py-1 text-xs font-medium">
+                  {project.difficulty}
+                </div>
+                {isProjectCreator(project.created_by) && (
+                  <button className="text-gray-500 hover:text-primary-500 transition-colors">
+                    <Edit className="w-5 h-5" />
+                  </button>
+                )}
               </div>
-              <h3 className="text-xl font-semibold">{project.title}</h3>
+              <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
             </div>
             
             <p className="text-light-text-secondary dark:text-dark-text-secondary mb-4">
@@ -212,10 +283,28 @@ function ProjectsPage() {
                 </span>
               </div>
             </div>
+
+            <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
+              <p>Created by {project.creator_name}</p>
+              <p>on {formatDate(project.created_at)}</p>
+            </div>
             
-            <button className="btn-primary w-full">
-              View Details
-            </button>
+            {isProjectCreator(project.created_by) ? (
+              <button className="btn-primary w-full">
+                View Details
+              </button>
+            ) : isProjectParticipant(project.id) ? (
+              <button className="btn-secondary w-full" disabled>
+                Already Joined
+              </button>
+            ) : (
+              <button 
+                className="btn-primary w-full"
+                onClick={() => handleJoinProject(project.id)}
+              >
+                Join Project
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -258,28 +347,33 @@ function ProjectsPage() {
 
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium mb-1">
-                    Description *
+                    Description * (minimum 200 characters)
                   </label>
                   <textarea
                     id="description"
                     value={newProject.description}
                     onChange={(e) => setNewProject({...newProject, description: e.target.value})}
-                    rows={4}
+                    rows={6}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     required
+                    minLength={200}
                   ></textarea>
+                  <p className="mt-1 text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {newProject.description.length}/200 characters
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="difficulty" className="block text-sm font-medium mb-1">
-                      Difficulty Level
+                      Difficulty Level *
                     </label>
                     <select
                       id="difficulty"
                       value={newProject.difficulty}
                       onChange={(e) => setNewProject({...newProject, difficulty: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
                     >
                       <option value="beginner">Beginner</option>
                       <option value="intermediate">Intermediate</option>
@@ -289,13 +383,14 @@ function ProjectsPage() {
 
                   <div>
                     <label htmlFor="category" className="block text-sm font-medium mb-1">
-                      Category
+                      Category *
                     </label>
                     <select
                       id="category"
                       value={newProject.category}
                       onChange={(e) => setNewProject({...newProject, category: e.target.value})}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
                     >
                       <option value="">Select category</option>
                       <option value="frontend">Frontend</option>
@@ -311,21 +406,22 @@ function ProjectsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="estimated_hours" className="block text-sm font-medium mb-1">
-                      Estimated Hours
+                      Estimated Hours *
                     </label>
                     <input
                       type="number"
                       id="estimated_hours"
                       value={newProject.estimated_hours}
                       onChange={(e) => setNewProject({...newProject, estimated_hours: parseInt(e.target.value)})}
-                      min="0"
+                      min="1"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
                     />
                   </div>
 
                   <div>
                     <label htmlFor="max_participants" className="block text-sm font-medium mb-1">
-                      Max Participants
+                      Max Participants *
                     </label>
                     <input
                       type="number"
@@ -334,6 +430,7 @@ function ProjectsPage() {
                       onChange={(e) => setNewProject({...newProject, max_participants: parseInt(e.target.value)})}
                       min="1"
                       className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      required
                     />
                   </div>
                 </div>
