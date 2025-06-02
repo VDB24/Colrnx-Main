@@ -25,29 +25,32 @@ function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
         <Link 
           to="/projects"
-          className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center"
+          className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col items-center justify-center gap-3"
         >
           <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
             <Code className="w-6 h-6 text-primary-500" />
           </div>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Create Project</span>
         </Link>
 
         <Link 
           to="/community"
-          className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center"
+          className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col items-center justify-center gap-3"
         >
           <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
             <Users className="w-6 h-6 text-primary-500" />
           </div>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Explore Community</span>
         </Link>
 
         <Link 
           to="/learn/ai"
-          className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center"
+          className="group bg-white dark:bg-dark-card rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col items-center justify-center gap-3"
         >
           <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
             <Brain className="w-6 h-6 text-primary-500" />
           </div>
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-primary-500 transition-colors">Learn with AI</span>
         </Link>
       </div>
       
