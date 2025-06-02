@@ -42,52 +42,15 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-xl transition-all duration-300 focus:outline-none;
+    @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-all duration-300 focus:outline-none;
   }
 
   .btn-primary {
-    @apply btn bg-primary-500 text-white;
-  }
-
-  .btn-primary:hover {
-    box-shadow: var(--tw-shadow-neu-light);
-  }
-
-  .dark .btn-primary:hover {
-    box-shadow: var(--tw-shadow-neu-dark);
-  }
-
-  .btn-primary:active {
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .btn-primary:active {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
+    @apply btn bg-primary-500 text-white hover:bg-primary-600;
   }
 
   .btn-secondary {
-    @apply btn bg-light-card dark:bg-dark-card text-primary-500;
-    box-shadow: var(--tw-shadow-neu-light-sm);
-  }
-
-  .dark .btn-secondary {
-    box-shadow: var(--tw-shadow-neu-dark-sm);
-  }
-
-  .btn-secondary:hover {
-    box-shadow: var(--tw-shadow-neu-light);
-  }
-
-  .dark .btn-secondary:hover {
-    box-shadow: var(--tw-shadow-neu-dark);
-  }
-
-  .btn-secondary:active {
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .btn-secondary:active {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
+    @apply btn bg-white text-primary-500 border border-primary-500 hover:bg-primary-50;
   }
 
   .btn-sm {
@@ -95,94 +58,18 @@
   }
 
   .card {
-    @apply bg-light-card dark:bg-dark-card rounded-xl p-6;
-    box-shadow: var(--tw-shadow-neu-light);
-  }
-
-  .dark .card {
-    box-shadow: var(--tw-shadow-neu-dark);
+    @apply bg-light-card dark:bg-dark-card rounded-xl shadow-lg border border-light-border dark:border-dark-border p-6;
   }
 
   .glass-effect {
-    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border border-white/20 dark:border-dark-border/20;
-    box-shadow: var(--tw-shadow-glass);
-  }
-
-  .input-neu {
-    @apply px-4 py-2 bg-light-card dark:bg-dark-card border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500;
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .input-neu {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
-  }
-
-  .select-neu {
-    @apply px-4 py-2 bg-light-card dark:bg-dark-card border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500;
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .select-neu {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
+    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md shadow-glass border border-white/20 dark:border-dark-border/20;
   }
 }
 
-@layer utilities {
-  .feature-card:hover {
-    transform: translateY(-5px);
-  }
+.feature-card:hover {
+  transform: translateY(-5px);
+}
 
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-400;
-  }
-
-  .neu-toggle {
-    @apply w-12 h-6 bg-light-card dark:bg-dark-card rounded-full relative cursor-pointer;
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .neu-toggle {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
-  }
-
-  .neu-toggle::after {
-    content: '';
-    @apply absolute w-5 h-5 bg-primary-500 rounded-full top-0.5 left-0.5 transition-transform duration-300;
-    box-shadow: var(--tw-shadow-neu-light-sm);
-  }
-
-  .dark .neu-toggle::after {
-    box-shadow: var(--tw-shadow-neu-dark-sm);
-  }
-
-  .neu-toggle[data-state="checked"]::after {
-    @apply transform translate-x-6;
-  }
-
-  .neu-radio {
-    @apply w-5 h-5 bg-light-card dark:bg-dark-card rounded-full;
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .neu-radio {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
-  }
-
-  .neu-radio[data-state="checked"]::after {
-    content: '';
-    @apply absolute w-3 h-3 bg-primary-500 rounded-full top-1 left-1;
-  }
-
-  .neu-checkbox {
-    @apply w-5 h-5 bg-light-card dark:bg-dark-card rounded;
-    box-shadow: var(--tw-shadow-neu-light-pressed);
-  }
-
-  .dark .neu-checkbox {
-    box-shadow: var(--tw-shadow-neu-dark-pressed);
-  }
-
-  .neu-checkbox[data-state="checked"] {
-    @apply bg-primary-500;
-  }
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-400;
 }

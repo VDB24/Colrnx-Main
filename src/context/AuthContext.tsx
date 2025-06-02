@@ -65,20 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.warn('Logout error:', error.message);
-      }
-    } catch (error) {
-      console.warn('Unexpected logout error:', error);
-    } finally {
-      // Always clear the user state and loading state,
-      // regardless of whether the signOut was successful
-      setUser(null);
-      setIsLoading(false);
-    }
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
   return (
