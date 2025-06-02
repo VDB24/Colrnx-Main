@@ -17,17 +17,17 @@ function AILearningPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-12">
-        <h1 className="text-3xl font-bold mb-3">AI Learning Assistant</h1>
-        <p className="text-light-text-secondary dark:text-dark-text-secondary text-lg">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">AI Learning Assistant</h1>
+        <p className="text-light-text-secondary dark:text-dark-text-secondary">
           Get personalized learning support powered by AI
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 h-[calc(100vh-12rem)]">
         {/* Main Chat Section */}
         <div className="lg:col-span-3">
-          <div className="card h-[700px] flex flex-col">
+          <div className="card h-full flex flex-col">
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* AI Message */}
@@ -36,8 +36,8 @@ function AILearningPage() {
                   <Brain className="w-6 h-6 text-primary-500" />
                 </div>
                 <div className="flex-1">
-                  <div className="bg-gray-100 dark:bg-dark-border rounded-2xl p-6 text-lg">
-                    <p>Hello! I'm your AI learning assistant. How can I help you today?</p>
+                  <div className="bg-gray-100 dark:bg-dark-border rounded-2xl p-6">
+                    <p className="text-lg">Hello! I'm your AI learning assistant. How can I help you today?</p>
                   </div>
                 </div>
               </div>
@@ -51,7 +51,7 @@ function AILearningPage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Ask anything about programming..."
-                  className="flex-1 px-6 py-4 border border-gray-300 dark:border-dark-border rounded-xl bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 text-lg"
+                  className="flex-1 px-6 py-4 border border-gray-300 dark:border-dark-border rounded-xl bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <button type="submit" className="btn-primary px-8 rounded-xl">
                   <Send className="w-6 h-6" />
@@ -62,37 +62,37 @@ function AILearningPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-8">
+        <div className="h-full overflow-y-auto space-y-6">
           {/* Quick Actions */}
           <div className="card">
-            <h2 className="text-xl font-semibold mb-6">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
-                <Sparkles className="w-6 h-6 text-primary-500 mr-4 group-hover:scale-110 transition-transform" />
-                <span className="text-lg">Explain a concept</span>
+            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+            <div className="space-y-2">
+              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
+                <Sparkles className="w-5 h-5 text-primary-500 mr-3 group-hover:scale-110 transition-transform" />
+                <span>Explain a concept</span>
               </button>
-              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
-                <MessageSquare className="w-6 h-6 text-primary-500 mr-4 group-hover:scale-110 transition-transform" />
-                <span className="text-lg">Practice coding</span>
+              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
+                <MessageSquare className="w-5 h-5 text-primary-500 mr-3 group-hover:scale-110 transition-transform" />
+                <span>Practice coding</span>
               </button>
-              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
-                <Brain className="w-6 h-6 text-primary-500 mr-4 group-hover:scale-110 transition-transform" />
-                <span className="text-lg">Get learning path</span>
+              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
+                <Brain className="w-5 h-5 text-primary-500 mr-3 group-hover:scale-110 transition-transform" />
+                <span>Get learning path</span>
               </button>
             </div>
           </div>
 
           {/* Learning Topics */}
           <div className="card">
-            <h2 className="text-xl font-semibold mb-6">Suggested Topics</h2>
-            <div className="space-y-3">
-              <button className="w-full text-left px-6 py-4 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-500 font-medium text-lg">
+            <h2 className="text-xl font-semibold mb-4">Suggested Topics</h2>
+            <div className="space-y-2">
+              <button className="w-full text-left px-4 py-3 rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-500 font-medium">
                 JavaScript Basics
               </button>
-              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors text-lg">
+              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors">
                 React Hooks
               </button>
-              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors text-lg">
+              <button className="w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors">
                 API Integration
               </button>
             </div>
