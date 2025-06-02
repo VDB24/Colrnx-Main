@@ -1,16 +1,246 @@
-import { useEffect, useState } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { User, Mail, Lock, BellRing, Settings, CreditCard, HelpCircle, ChevronRight } from 'lucide-react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 function ProfilePage() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  // Profile form state
+  const [profileData, setProfileData] = useState({
+    firstName: user?.user_metadata?.name?.split(' ')[0] || '',
+    lastName: user?.user_metadata?.name?.split(' ')[1] || '',
+    email: user?.email || '',
+    bio: user?.user_metadata?.bio || ''
+  });
+
+  // Security form state
+  const [securityData, setSecurityData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  // Notification preferences state
+  const [notifications, setNotifications] = useState({
+    courseUpdates: true,
+    projectInvitations: true,
+    forumReplies: true,
+    promotionalEmails: false,
+    messages: true,
+    reminders: true
+  });
+
+  // Learning preferences state
+  const [preferences, setPreferences] = useState({
+    learningGoal: user?.user_metadata?.learningGoal || '',
+    primaryInterest: user?.user_metadata?.primaryInterest || '',
+    weeklyHours: user?.user_metadata?.weeklyHours || '',
+    aiAssistant: true,
+    personalizedContent: true
+  });
 
   useEffect(() => {
     document.title = 'Profile Settings | LearnFlow';
-  }, []);
+    
+    // Load user preferences from Supabase
+    const loadUserPreferences = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user?.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setProfileData(prev => ({
+            ...prev,
+            bio: data.bio || ''
+          }));
+          
+          setPreferences(prev => ({
+            ...prev,
+            learningGoal: data.learning_goal || '',
+            primaryInterest: data.primary_interest || '',
+            weeklyHours: data.weekly_hours || ''
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading user preferences:', error);
+      }
+    };
+
+    loadUserPreferences();
+  }, [user]);
+
+  const handleProfileSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+          bio: profileData.bio
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      // Update profile in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+          bio: profileData.bio,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (profileError) throw profileError;
+
+      setMessage({
+        type: 'success',
+        text: 'Profile updated successfully!'
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to update profile. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSecuritySubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      setMessage({
+        type: 'error',
+        text: 'New passwords do not match.'
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: securityData.newPassword
+      });
+
+      if (error) throw error;
+
+      setMessage({
+        type: 'success',
+        text: 'Password updated successfully!'
+      });
+      
+      // Clear form
+      setSecurityData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to update password. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNotificationSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          notification_preferences: notifications,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      setMessage({
+        type: 'success',
+        text: 'Notification preferences updated successfully!'
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to update notification preferences. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePreferencesSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          learningGoal: preferences.learningGoal,
+          primaryInterest: preferences.primaryInterest,
+          weeklyHours: preferences.weeklyHours
+        }
+      });
+
+      if (updateError) throw updateError;
+
+      // Update profile preferences
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          learning_goal: preferences.learningGoal,
+          primary_interest: preferences.primaryInterest,
+          weekly_hours: preferences.weeklyHours,
+          ai_preferences: {
+            aiAssistant: preferences.aiAssistant,
+            personalizedContent: preferences.personalizedContent
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user?.id);
+
+      if (profileError) throw profileError;
+
+      setMessage({
+        type: 'success',
+        text: 'Learning preferences updated successfully!'
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: 'Failed to update learning preferences. Please try again.'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -124,17 +354,28 @@ function ProfilePage() {
             
             {/* Main Content */}
             <div className="lg:col-span-3">
+              {/* Success/Error Message */}
+              {message.text && (
+                <div className={`mb-6 p-4 rounded-lg ${
+                  message.type === 'success' 
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400'
+                    : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                }`}>
+                  {message.text}
+                </div>
+              )}
+
               {activeTab === 'profile' && (
                 <div className="bg-white dark:bg-dark-card rounded-xl shadow-md">
                   <div className="p-6 border-b border-gray-200 dark:border-dark-border">
                     <h2 className="text-xl font-bold">Profile Information</h2>
                     <p className="text-light-text-secondary dark:text-dark-text-secondary">
-                      Update your personal information and how others see you on the platform
+                      Update your personal information
                     </p>
                   </div>
                   
                   <div className="p-6">
-                    <form>
+                    <form onSubmit={handleProfileSubmit}>
                       <div className="flex flex-col md:flex-row gap-6 mb-6">
                         <div className="flex-1">
                           <label htmlFor="firstName" className="block text-sm font-medium mb-1">
@@ -143,7 +384,8 @@ function ProfilePage() {
                           <input
                             type="text"
                             id="firstName"
-                            defaultValue="Jane"
+                            value={profileData.firstName}
+                            onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
                             className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           />
                         </div>
@@ -155,7 +397,8 @@ function ProfilePage() {
                           <input
                             type="text"
                             id="lastName"
-                            defaultValue="Doe"
+                            value={profileData.lastName}
+                            onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
                             className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           />
                         </div>
@@ -168,8 +411,9 @@ function ProfilePage() {
                         <input
                           type="email"
                           id="email"
-                          defaultValue={user?.email}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          value={profileData.email}
+                          disabled
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-gray-50 dark:bg-dark-border cursor-not-allowed"
                         />
                       </div>
                       
@@ -180,33 +424,20 @@ function ProfilePage() {
                         <textarea
                           id="bio"
                           rows={4}
+                          value={profileData.bio}
+                          onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           placeholder="Tell us about yourself..."
                         ></textarea>
                       </div>
                       
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium mb-1">
-                          Profile Picture
-                        </label>
-                        <div className="flex items-center">
-                          <div className="w-16 h-16 rounded-full bg-primary-100 text-primary-500 flex items-center justify-center font-semibold text-xl mr-4">
-                            {user?.user_metadata?.name?.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <button className="btn-secondary btn-sm mb-1">
-                              Change Picture
-                            </button>
-                            <p className="text-xs text-light-text-secondary dark:text-dark-text-secondary">
-                              JPG, PNG or GIF. Max size 2MB.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      
                       <div className="flex justify-end">
-                        <button className="btn-primary">
-                          Save Changes
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn-primary"
+                        >
+                          {isSubmitting ? 'Saving...' : 'Save Changes'}
                         </button>
                       </div>
                     </form>
@@ -219,12 +450,12 @@ function ProfilePage() {
                   <div className="p-6 border-b border-gray-200 dark:border-dark-border">
                     <h2 className="text-xl font-bold">Security</h2>
                     <p className="text-light-text-secondary dark:text-dark-text-secondary">
-                      Manage your password and account security settings
+                      Update your password and security settings
                     </p>
                   </div>
                   
                   <div className="p-6">
-                    <form>
+                    <form onSubmit={handleSecuritySubmit}>
                       <div className="mb-6">
                         <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">
                           Current Password
@@ -232,6 +463,8 @@ function ProfilePage() {
                         <input
                           type="password"
                           id="currentPassword"
+                          value={securityData.currentPassword}
+                          onChange={(e) => setSecurityData({...securityData, currentPassword: e.target.value})}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           placeholder="••••••••"
                         />
@@ -244,6 +477,8 @@ function ProfilePage() {
                         <input
                           type="password"
                           id="newPassword"
+                          value={securityData.newPassword}
+                          onChange={(e) => setSecurityData({...securityData, newPassword: e.target.value})}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           placeholder="••••••••"
                         />
@@ -256,45 +491,23 @@ function ProfilePage() {
                         <input
                           type="password"
                           id="confirmPassword"
+                          value={securityData.confirmPassword}
+                          onChange={(e) => setSecurityData({...securityData, confirmPassword: e.target.value})}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                           placeholder="••••••••"
                         />
                       </div>
                       
                       <div className="flex justify-end">
-                        <button className="btn-primary">
-                          Update Password
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn-primary"
+                        >
+                          {isSubmitting ? 'Updating...' : 'Update Password'}
                         </button>
                       </div>
                     </form>
-                    
-                    <div className="mt-10 pt-6 border-t border-gray-200 dark:border-dark-border">
-                      <h3 className="text-lg font-semibold mb-4">Two-Factor Authentication</h3>
-                      
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-border/30 rounded-lg mb-4">
-                        <div>
-                          <h4 className="font-medium">Two-Factor Authentication</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Add an extra layer of security to your account
-                          </p>
-                        </div>
-                        <button className="btn-secondary btn-sm">
-                          Enable
-                        </button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-dark-border/30 rounded-lg">
-                        <div>
-                          <h4 className="font-medium">Connected Devices</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Manage devices that have logged into your account
-                          </p>
-                        </div>
-                        <button className="btn-secondary btn-sm">
-                          Manage
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
@@ -304,102 +517,108 @@ function ProfilePage() {
                   <div className="p-6 border-b border-gray-200 dark:border-dark-border">
                     <h2 className="text-xl font-bold">Notification Settings</h2>
                     <p className="text-light-text-secondary dark:text-dark-text-secondary">
-                      Manage how and when you receive notifications
+                      Manage your notification preferences
                     </p>
                   </div>
                   
                   <div className="p-6">
-                    <h3 className="font-semibold mb-4">Email Notifications</h3>
-                    
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Course Updates</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Receive updates about your enrolled courses
-                          </p>
+                    <form onSubmit={handleNotificationSubmit}>
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Course Updates</h3>
+                            <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
+                              Receive updates about your enrolled courses
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications.courseUpdates}
+                              onChange={(e) => setNotifications({
+                                ...notifications,
+                                courseUpdates: e.target.checked
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Project Invitations</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Receive notifications when invited to join a project
-                          </p>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Project Invitations</h3>
+                            <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
+                              Receive notifications for project invitations
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications.projectInvitations}
+                              onChange={(e) => setNotifications({
+                                ...notifications,
+                                projectInvitations: e.target.checked
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Forum Replies</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Receive notifications when someone replies to your post
-                          </p>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Forum Replies</h3>
+                            <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
+                              Get notified when someone replies to your posts
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications.forumReplies}
+                              onChange={(e) => setNotifications({
+                                ...notifications,
+                                forumReplies: e.target.checked
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Promotional Emails</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Receive updates about new courses and features
-                          </p>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Promotional Emails</h3>
+                            <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
+                              Receive updates about new courses and features
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={notifications.promotionalEmails}
+                              onChange={(e) => setNotifications({
+                                ...notifications,
+                                promotionalEmails: e.target.checked
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                          </label>
                         </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
-                        </label>
                       </div>
-                    </div>
-                    
-                    <h3 className="font-semibold mb-4">Browser Notifications</h3>
-                    
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Messages</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Receive browser notifications for new messages
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
-                        </label>
+
+                      <div className="mt-8 flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn-primary"
+                        >
+                          {isSubmitting ? 'Saving...' : 'Save Preferences'}
+                        </button>
                       </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Reminders</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Receive browser notifications for upcoming deadlines
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <button className="btn-primary">
-                        Save Preferences
-                      </button>
-                    </div>
+                    </form>
                   </div>
                 </div>
               )}
@@ -407,97 +626,124 @@ function ProfilePage() {
               {activeTab === 'preferences' && (
                 <div className="bg-white dark:bg-dark-card rounded-xl shadow-md">
                   <div className="p-6 border-b border-gray-200 dark:border-dark-border">
-                    <h2 className="text-xl font-bold">Preferences</h2>
+                    <h2 className="text-xl font-bold">Learning Preferences</h2>
                     <p className="text-light-text-secondary dark:text-dark-text-secondary">
                       Customize your learning experience
                     </p>
                   </div>
                   
                   <div className="p-6">
-                    <h3 className="font-semibold mb-4">Learning Preferences</h3>
-                    
-                    <div className="mb-6">
-                      <label htmlFor="learningGoal" className="block text-sm font-medium mb-1">
-                        Primary Learning Goal
-                      </label>
-                      <select
-                        id="learningGoal"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option>Career Change</option>
-                        <option>Skill Improvement</option>
-                        <option>Professional Certification</option>
-                        <option>Personal Interest</option>
-                      </select>
-                    </div>
-                    
-                    <div className="mb-6">
-                      <label htmlFor="primaryInterest" className="block text-sm font-medium mb-1">
-                        Primary Field of Interest
-                      </label>
-                      <select
-                        id="primaryInterest"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option>Frontend Development</option>
-                        <option>Backend Development</option>
-                        <option>Full Stack Development</option>
-                        <option>Mobile Development</option>
-                        <option>Data Science</option>
-                        <option>UI/UX Design</option>
-                      </select>
-                    </div>
-                    
-                    <div className="mb-6">
-                      <label htmlFor="weeklyHours" className="block text-sm font-medium mb-1">
-                        Hours Available Per Week
-                      </label>
-                      <select
-                        id="weeklyHours"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      >
-                        <option>Less than 5 hours</option>
-                        <option>5-10 hours</option>
-                        <option>10-20 hours</option>
-                        <option>20+ hours</option>
-                      </select>
-                    </div>
-                    
-                    <h3 className="font-semibold mb-4 mt-8">AI Assistant Preferences</h3>
-                    
-                    <div className="space-y-4 mb-8">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">AI Learning Assistant</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Enable AI recommendations and personalized learning paths
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                    <form onSubmit={handlePreferencesSubmit}>
+                      <div className="mb-6">
+                        <label htmlFor="learningGoal" className="block text-sm font-medium mb-1">
+                          Primary Learning Goal
                         </label>
+                        <select
+                          id="learningGoal"
+                          value={preferences.learningGoal}
+                          onChange={(e) => setPreferences({...preferences, learningGoal: e.target.value})}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="">Select your goal</option>
+                          <option value="career-change">Career Change</option>
+                          <option value="skill-up">Skill Improvement</option>
+                          <option value="certification">Professional Certification</option>
+                          <option value="hobby">Personal Interest</option>
+                        </select>
                       </div>
                       
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Personalized Content</h4>
-                          <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                            Allow AI to suggest courses based on your activity
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                      <div className="mb-6">
+                        <label htmlFor="primaryInterest" className="block text-sm font-medium mb-1">
+                          Primary Field of Interest
                         </label>
+                        <select
+                          id="primaryInterest"
+                          value={preferences.primaryInterest}
+                          onChange={(e) => setPreferences({...preferences, primaryInterest: e.target.value})}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="">Select your field</option>
+                          <option value="frontend">Frontend Development</option>
+                          <option value="backend">Backend Development</option>
+                          <option value="fullstack">Full Stack Development</option>
+                          <option value="mobile">Mobile Development</option>
+                          <option value="data-science">Data Science</option>
+                          <option value="ui-ux">UI/UX Design</option>
+                        </select>
                       </div>
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <button className="btn-primary">
-                        Save Preferences
-                      </button>
-                    </div>
+                      
+                      <div className="mb-6">
+                        <label htmlFor="weeklyHours" className="block text-sm font-medium mb-1">
+                          Hours Available Per Week
+                        </label>
+                        <select
+                          id="weeklyHours"
+                          value={preferences.weeklyHours}
+                          onChange={(e) => setPreferences({...preferences, weeklyHours: e.target.value})}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        >
+                          <option value="">Select hours</option>
+                          <option value="0-5">Less than 5 hours</option>
+                          <option value="5-10">5-10 hours</option>
+                          <option value="10-20">10-20 hours</option>
+                          <option value="20+">20+ hours</option>
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-6 mb-8">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">AI Learning Assistant</h3>
+                            <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
+                              Enable AI recommendations and personalized learning paths
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={preferences.aiAssistant}
+                              onChange={(e) => setPreferences({
+                                ...preferences,
+                                aiAssistant: e.target.checked
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                          </label>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="font-medium">Personalized Content</h3>
+                            <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
+                              Allow AI to suggest courses based on your activity
+                            </p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={preferences.personalizedContent}
+                              onChange={(e) => setPreferences({
+                                ...preferences,
+                                personalizedContent: e.target.checked
+                              })}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-dark-border peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary-500"></div>
+                          </label>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="btn-primary"
+                        >
+                          {isSubmitting ? 'Saving...' : 'Save Preferences'}
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
               )}
@@ -516,137 +762,21 @@ function ProfilePage() {
                       <div>
                         <h3 className="font-semibold">Current Plan: Free</h3>
                         <p className="text-light-text-secondary dark:text-dark-text-secondary text-sm">
-                          You're currently on the free plan with limited access
+                          You're currently on the free plan
                         </p>
                       </div>
                       <button className="btn-primary btn-sm">
-                        Upgrade
+                        Upgrade Plan
                       </button>
                     </div>
                     
-                    <h3 className="font-semibold mb-4">Available Plans</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                      {/* Free Plan */}
-                      <div className="border-2 border-gray-200 dark:border-dark-border rounded-lg p-4 hover:border-primary-500 dark:hover:border-primary-500 transition-colors">
-                        <h4 className="font-semibold mb-2">Free</h4>
-                        <p className="text-2xl font-bold mb-4">$0<span className="text-sm font-normal text-light-text-secondary dark:text-dark-text-secondary">/month</span></p>
-                        <ul className="space-y-2 mb-4 text-sm">
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Access to basic courses
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Community forum access
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Limited AI assistant
-                          </li>
-                        </ul>
-                        <div className="text-center">
-                          <span className="inline-block px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full text-xs font-medium">
-                            Current Plan
-                          </span>
-                        </div>
+                    <div className="mb-8">
+                      <h3 className="font-semibold mb-4">Payment Methods</h3>
+                      <div className="border border-gray-200 dark:border-dark-border rounded-lg p-4">
+                        <p className="text-center text-light-text-secondary dark:text-dark-text-secondary">
+                          No payment methods added
+                        </p>
                       </div>
-                      
-                      {/* Pro Plan */}
-                      <div className="border-2 border-primary-500 rounded-lg p-4 shadow-lg shadow-primary-100 dark:shadow-primary-900/20">
-                        <h4 className="font-semibold mb-2">Pro</h4>
-                        <p className="text-2xl font-bold mb-4">$29<span className="text-sm font-normal text-light-text-secondary dark:text-dark-text-secondary">/month</span></p>
-                        <ul className="space-y-2 mb-4 text-sm">
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            All Free features
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Full course library
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Unlimited AI assistant
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Project-based learning
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Certificate of completion
-                          </li>
-                        </ul>
-                        <button className="btn-primary w-full">
-                          Upgrade to Pro
-                        </button>
-                      </div>
-                      
-                      {/* Team Plan */}
-                      <div className="border-2 border-gray-200 dark:border-dark-border rounded-lg p-4 hover:border-primary-500 dark:hover:border-primary-500 transition-colors">
-                        <h4 className="font-semibold mb-2">Team</h4>
-                        <p className="text-2xl font-bold mb-4">$99<span className="text-sm font-normal text-light-text-secondary dark:text-dark-text-secondary">/month</span></p>
-                        <ul className="space-y-2 mb-4 text-sm">
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            All Pro features
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Team collaboration tools
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Admin dashboard
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Priority support
-                          </li>
-                          <li className="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Custom learning paths
-                          </li>
-                        </ul>
-                        <button className="btn-secondary w-full">
-                          Contact Sales
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <h3 className="font-semibold mb-4">Payment Methods</h3>
-                    
-                    <div className="border border-gray-200 dark:border-dark-border rounded-lg p-4 mb-4">
-                      <p className="text-center text-light-text-secondary dark:text-dark-text-secondary">
-                        No payment methods added yet
-                      </p>
                     </div>
                     
                     <button className="btn-secondary">
@@ -661,7 +791,7 @@ function ProfilePage() {
                   <div className="p-6 border-b border-gray-200 dark:border-dark-border">
                     <h2 className="text-xl font-bold">Help & Support</h2>
                     <p className="text-light-text-secondary dark:text-dark-text-secondary">
-                      Get help with any issues or questions you have
+                      Get help with any issues or questions
                     </p>
                   </div>
                   
