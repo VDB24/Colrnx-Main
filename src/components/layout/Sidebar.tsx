@@ -1,10 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, Users, Code, Layout, BookOpenCheck, Brain, 
-  ChevronDown, ChevronRight, ChevronLeft, Settings, LogOut,
-  ChevronLeft as ChevronDoubleLeft, 
-  ChevronRight as ChevronDoubleRight 
+  ChevronDown, ChevronRight, Settings, LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -64,31 +62,29 @@ function Sidebar({ onToggle }: SidebarProps) {
     }
   ];
 
-  const toggleSidebar = () => {
-    const newCollapsedState = !isCollapsed;
-    setIsCollapsed(newCollapsedState);
-    onToggle(newCollapsedState);
-    if (!isCollapsed) {
-      setIsLearnExpanded(false);
-    }
-  };
-
   return (
     <aside 
-      className={`hidden lg:flex h-screen flex-col fixed left-0 top-0 bottom-0 pt-20 bg-white dark:bg-dark-card border-r border-gray-200 dark:border-dark-border transition-all duration-300 z-20 ${
+      className={`hidden lg:flex h-screen flex-col fixed left-0 top-0 bottom-0 pt-20 bg-white dark:bg-dark-card border-r border-gray-200 dark:border-dark-border transition-all duration-300 z-20 hover:w-64 ${
         isCollapsed ? 'w-16 px-2' : 'w-64 px-4'
       }`}
+      onMouseEnter={() => {
+        setIsCollapsed(false);
+        onToggle(false);
+      }}
+      onMouseLeave={() => {
+        setIsCollapsed(true);
+        onToggle(true);
+        setIsLearnExpanded(false);
+      }}
     >
       {/* User Profile Section */}
-      {!isCollapsed && (
-        <div className="mb-6 px-4 py-3 bg-gray-50 dark:bg-dark-border/30 rounded-lg">
-          <div className="flex items-center">
-            <div className="ml-3">
-              <p className="font-medium truncate">{user?.user_metadata?.name}</p>
-            </div>
+      <div className={`mb-6 px-4 py-3 bg-gray-50 dark:bg-dark-border/30 rounded-lg transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="flex items-center">
+          <div className="ml-3">
+            <p className="font-medium truncate">{user?.user_metadata?.name}</p>
           </div>
         </div>
-      )}
+      </div>
 
       <nav className="flex-1 space-y-1">
         {navItems.map((item) => {
@@ -108,15 +104,15 @@ function Sidebar({ onToggle }: SidebarProps) {
                 >
                   <div className="flex items-center min-w-0">
                     <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                      {item.name}
+                    </span>
                     {!isCollapsed && (
-                      <>
-                        <span className="ml-3 truncate">{item.name}</span>
-                        {isLearnExpanded ? (
-                          <ChevronDown className="w-4 h-4 ml-auto" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 ml-auto" />
-                        )}
-                      </>
+                      isLearnExpanded ? (
+                        <ChevronDown className="w-4 h-4 ml-auto" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 ml-auto" />
+                      )
                     )}
                   </div>
                 </button>
@@ -159,7 +155,9 @@ function Sidebar({ onToggle }: SidebarProps) {
               }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              {!isCollapsed && <span className="ml-3 truncate">{item.name}</span>}
+              <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+                {item.name}
+              </span>
             </Link>
           );
         })}
@@ -174,7 +172,9 @@ function Sidebar({ onToggle }: SidebarProps) {
           }`}
         >
           <Settings className="w-5 h-5 flex-shrink-0" />
-          {!isCollapsed && <span className="ml-3 truncate">Settings</span>}
+          <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+            Settings
+          </span>
         </Link>
 
         {/* Sign Out Button */}
@@ -183,21 +183,11 @@ function Sidebar({ onToggle }: SidebarProps) {
           className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!isCollapsed && <span className="ml-3 truncate">Sign Out</span>}
+          <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+            Sign Out
+          </span>
         </button>
       </nav>
-
-      {/* Collapse Button */}
-      <button
-        onClick={toggleSidebar}
-        className="mt-4 mb-4 flex items-center justify-center w-full p-2 text-gray-500 hover:text-primary-500 transition-colors"
-      >
-        {isCollapsed ? (
-          <ChevronDoubleRight className="w-5 h-5" />
-        ) : (
-          <ChevronDoubleLeft className="w-5 h-5" />
-        )}
-      </button>
     </aside>
   );
 }
