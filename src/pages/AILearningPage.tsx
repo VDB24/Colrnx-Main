@@ -17,26 +17,26 @@ function AILearningPage() {
 
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">AI Learning Assistant</h1>
-        <p className="text-light-text-secondary dark:text-dark-text-secondary">
+      <div className="mb-12">
+        <h1 className="text-3xl font-bold mb-3">AI Learning Assistant</h1>
+        <p className="text-light-text-secondary dark:text-dark-text-secondary text-lg">
           Get personalized learning support powered by AI
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Main Chat Section */}
-        <div className="lg:col-span-2">
-          <div className="card h-[600px] flex flex-col">
+        <div className="lg:col-span-3">
+          <div className="card h-[700px] flex flex-col">
             {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* AI Message */}
-              <div className="flex items-start">
-                <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mr-4">
-                  <Brain className="w-5 h-5 text-primary-500" />
+              <div className="flex items-start max-w-3xl">
+                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center mr-4 flex-shrink-0">
+                  <Brain className="w-6 h-6 text-primary-500" />
                 </div>
                 <div className="flex-1">
-                  <div className="bg-gray-100 dark:bg-dark-border rounded-lg p-4 max-w-[80%]">
+                  <div className="bg-gray-100 dark:bg-dark-border rounded-2xl p-6 text-lg">
                     <p>Hello! I'm your AI learning assistant. How can I help you today?</p>
                   </div>
                 </div>
@@ -44,17 +44,17 @@ function AILearningPage() {
             </div>
 
             {/* Message Input */}
-            <div className="border-t border-gray-200 dark:border-dark-border p-4">
+            <div className="border-t border-gray-200 dark:border-dark-border p-6">
               <form onSubmit={handleSubmit} className="flex gap-4">
                 <input
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Ask anything about programming..."
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-6 py-4 border border-gray-300 dark:border-dark-border rounded-xl bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500 text-lg"
                 />
-                <button type="submit" className="btn-primary">
-                  <Send className="w-5 h-5" />
+                <button type="submit" className="btn-primary px-8 rounded-xl">
+                  <Send className="w-6 h-6" />
                 </button>
               </form>
             </div>
@@ -62,64 +62,39 @@ function AILearningPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Quick Actions */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-            <div className="space-y-2">
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center">
-                <Sparkles className="w-5 h-5 text-primary-500 mr-3" />
-                Explain a concept
+            <h2 className="text-xl font-semibold mb-6">Quick Actions</h2>
+            <div className="space-y-3">
+              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
+                <Sparkles className="w-6 h-6 text-primary-500 mr-4 group-hover:scale-110 transition-transform" />
+                <span className="text-lg">Explain a concept</span>
               </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center">
-                <MessageSquare className="w-5 h-5 text-primary-500 mr-3" />
-                Practice coding
+              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
+                <MessageSquare className="w-6 h-6 text-primary-500 mr-4 group-hover:scale-110 transition-transform" />
+                <span className="text-lg">Practice coding</span>
               </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center">
-                <Brain className="w-5 h-5 text-primary-500 mr-3" />
-                Get learning path
+              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors flex items-center group">
+                <Brain className="w-6 h-6 text-primary-500 mr-4 group-hover:scale-110 transition-transform" />
+                <span className="text-lg">Get learning path</span>
               </button>
             </div>
           </div>
 
           {/* Learning Topics */}
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4">Suggested Topics</h2>
-            <div className="space-y-2">
-              <button className="w-full text-left px-4 py-2 rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-500">
+            <h2 className="text-xl font-semibold mb-6">Suggested Topics</h2>
+            <div className="space-y-3">
+              <button className="w-full text-left px-6 py-4 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-500 font-medium text-lg">
                 JavaScript Basics
               </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors">
+              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors text-lg">
                 React Hooks
               </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-border transition-colors">
+              <button className="w-full text-left px-6 py-4 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-border transition-colors text-lg">
                 API Integration
               </button>
-            </div>
-          </div>
-
-          {/* Learning Stats */}
-          <div className="card">
-            <h2 className="text-lg font-semibold mb-4">Learning Stats</h2>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Daily Goal</span>
-                  <span className="text-primary-500">4/5 topics</span>
-                </div>
-                <div className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
-                  <div className="bg-primary-500 h-full rounded-full" style={{width: '80%'}}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Weekly Progress</span>
-                  <span className="text-primary-500">85%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-full overflow-hidden">
-                  <div className="bg-primary-500 h-full rounded-full" style={{width: '85%'}}></div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
