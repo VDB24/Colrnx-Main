@@ -50,39 +50,44 @@
   }
 
   .btn-primary:hover {
-    @apply shadow-neu-light;
+    box-shadow: var(--tw-shadow-neu-light);
   }
 
   .dark .btn-primary:hover {
-    @apply shadow-neu-dark;
+    box-shadow: var(--tw-shadow-neu-dark);
   }
 
   .btn-primary:active {
-    @apply shadow-neu-light-pressed;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
   }
 
   .dark .btn-primary:active {
-    @apply shadow-neu-dark-pressed;
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
   }
 
   .btn-secondary {
-    @apply btn bg-light-card dark:bg-dark-card text-primary-500 shadow-neu-light-sm dark:shadow-neu-dark-sm;
+    @apply btn bg-light-card dark:bg-dark-card text-primary-500;
+    box-shadow: var(--tw-shadow-neu-light-sm);
+  }
+
+  .dark .btn-secondary {
+    box-shadow: var(--tw-shadow-neu-dark-sm);
   }
 
   .btn-secondary:hover {
-    @apply shadow-neu-light;
+    box-shadow: var(--tw-shadow-neu-light);
   }
 
   .dark .btn-secondary:hover {
-    @apply shadow-neu-dark;
+    box-shadow: var(--tw-shadow-neu-dark);
   }
 
   .btn-secondary:active {
-    @apply shadow-neu-light-pressed;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
   }
 
   .dark .btn-secondary:active {
-    @apply shadow-neu-dark-pressed;
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
   }
 
   .btn-sm {
@@ -90,57 +95,94 @@
   }
 
   .card {
-    @apply bg-light-card dark:bg-dark-card rounded-xl shadow-neu-light dark:shadow-neu-dark p-6;
+    @apply bg-light-card dark:bg-dark-card rounded-xl p-6;
+    box-shadow: var(--tw-shadow-neu-light);
+  }
+
+  .dark .card {
+    box-shadow: var(--tw-shadow-neu-dark);
   }
 
   .glass-effect {
-    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md shadow-glass border border-white/20 dark:border-dark-border/20;
+    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border border-white/20 dark:border-dark-border/20;
+    box-shadow: var(--tw-shadow-glass);
   }
 
   .input-neu {
-    @apply px-4 py-2 bg-light-card dark:bg-dark-card border-none rounded-xl shadow-neu-light-pressed dark:shadow-neu-dark-pressed focus:outline-none focus:ring-2 focus:ring-primary-500;
+    @apply px-4 py-2 bg-light-card dark:bg-dark-card border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
+  }
+
+  .dark .input-neu {
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
   }
 
   .select-neu {
-    @apply px-4 py-2 bg-light-card dark:bg-dark-card border-none rounded-xl shadow-neu-light-pressed dark:shadow-neu-dark-pressed focus:outline-none focus:ring-2 focus:ring-primary-500;
+    @apply px-4 py-2 bg-light-card dark:bg-dark-card border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
+  }
+
+  .dark .select-neu {
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
   }
 }
 
-.feature-card:hover {
-  transform: translateY(-5px);
-}
+@layer utilities {
+  .feature-card:hover {
+    transform: translateY(-5px);
+  }
 
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-400;
-}
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-500 to-secondary-400;
+  }
 
-/* Neumorphic Styles */
-.neu-toggle {
-  @apply w-12 h-6 bg-light-card dark:bg-dark-card rounded-full relative shadow-neu-light-pressed dark:shadow-neu-dark-pressed cursor-pointer;
-}
+  .neu-toggle {
+    @apply w-12 h-6 bg-light-card dark:bg-dark-card rounded-full relative cursor-pointer;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
+  }
 
-.neu-toggle::after {
-  content: '';
-  @apply absolute w-5 h-5 bg-primary-500 rounded-full top-0.5 left-0.5 transition-transform duration-300 shadow-neu-light-sm dark:shadow-neu-dark-sm;
-}
+  .dark .neu-toggle {
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
+  }
 
-.neu-toggle[data-state="checked"]::after {
-  @apply transform translate-x-6;
-}
+  .neu-toggle::after {
+    content: '';
+    @apply absolute w-5 h-5 bg-primary-500 rounded-full top-0.5 left-0.5 transition-transform duration-300;
+    box-shadow: var(--tw-shadow-neu-light-sm);
+  }
 
-.neu-radio {
-  @apply w-5 h-5 bg-light-card dark:bg-dark-card rounded-full shadow-neu-light-pressed dark:shadow-neu-dark-pressed;
-}
+  .dark .neu-toggle::after {
+    box-shadow: var(--tw-shadow-neu-dark-sm);
+  }
 
-.neu-radio[data-state="checked"]::after {
-  content: '';
-  @apply absolute w-3 h-3 bg-primary-500 rounded-full top-1 left-1;
-}
+  .neu-toggle[data-state="checked"]::after {
+    @apply transform translate-x-6;
+  }
 
-.neu-checkbox {
-  @apply w-5 h-5 bg-light-card dark:bg-dark-card rounded shadow-neu-light-pressed dark:shadow-neu-dark-pressed;
-}
+  .neu-radio {
+    @apply w-5 h-5 bg-light-card dark:bg-dark-card rounded-full;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
+  }
 
-.neu-checkbox[data-state="checked"] {
-  @apply bg-primary-500;
+  .dark .neu-radio {
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
+  }
+
+  .neu-radio[data-state="checked"]::after {
+    content: '';
+    @apply absolute w-3 h-3 bg-primary-500 rounded-full top-1 left-1;
+  }
+
+  .neu-checkbox {
+    @apply w-5 h-5 bg-light-card dark:bg-dark-card rounded;
+    box-shadow: var(--tw-shadow-neu-light-pressed);
+  }
+
+  .dark .neu-checkbox {
+    box-shadow: var(--tw-shadow-neu-dark-pressed);
+  }
+
+  .neu-checkbox[data-state="checked"] {
+    @apply bg-primary-500;
+  }
 }
