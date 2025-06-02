@@ -30,6 +30,8 @@ interface ProjectParticipant {
 function ProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [yourProjects, setYourProjects] = useState<Project[]>([]);
+  const [exploreProjects, setExploreProjects] = useState<Project[]>([]);
   const [participants, setParticipants] = useState<ProjectParticipant[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -71,6 +73,15 @@ function ProjectsPage() {
 
   const loadProjects = async () => {
     try {
+      // Load projects where user is creator or participant
+      const { data: participantData } = await supabase
+        .from('project_participants')
+        .select('project_id')
+        .eq('user_id', user?.id);
+
+      const participatedProjectIds = participantData?.map(p => p.project_id) || [];
+
+      // Get all projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -78,13 +89,12 @@ function ProjectsPage() {
 
       if (projectsError) throw projectsError;
 
+      // Get creator names
       const creatorIds = [...new Set(projectsData?.map(p => p.created_by) || [])];
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('id, name')
         .in('id', creatorIds);
-
-      if (profilesError) throw profilesError;
 
       const creatorMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
 
@@ -92,6 +102,19 @@ function ProjectsPage() {
         ...project,
         creator_name: creatorMap.get(project.created_by) || 'Unknown'
       }));
+
+      // Separate projects into your projects and explore projects
+      setYourProjects(
+        projectsWithCreatorNames?.filter(project => 
+          project.created_by === user?.id || participatedProjectIds.includes(project.id)
+        ) || []
+      );
+
+      setExploreProjects(
+        projectsWithCreatorNames?.filter(project => 
+          project.created_by !== user?.id && !participatedProjectIds.includes(project.id)
+        ) || []
+      );
 
       setProjects(projectsWithCreatorNames || []);
     } catch (error) {
@@ -293,92 +316,174 @@ function ProjectsPage() {
           </button>
         </div>
       </div>
-      
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <SearchBar placeholder="Search projects..." />
-        <FilterBar 
-          options={{
-            levels: ['beginner', 'intermediate', 'advanced'],
-            categories: ['frontend', 'backend', 'fullstack', 'mobile'],
-            sortOptions: ['newest', 'popular']
-          }}
-        />
+
+      {/* Your Projects Section */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold mb-6">Your Projects</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {yourProjects.map(project => (
+            <div key={project.id} className="card hover:shadow-lg transition-all duration-300">
+              <div className="mb-4">
+                <div className="flex justify-between items-start">
+                  <div className={`inline-block ${getDifficultyColor(project.difficulty)} rounded-full px-3 py-1 text-xs font-medium`}>
+                    {project.difficulty}
+                  </div>
+                  {isProjectCreator(project.created_by) && (
+                    <button 
+                      onClick={() => handleEditProject(project)}
+                      className="text-gray-500 hover:text-primary-500 transition-colors"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+                <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
+                  {project.description}
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {project.tags.map(tag => (
+                  <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Clock className="w-4 h-4 text-gray-500 mr-1" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {project.estimated_hours} hours
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {project.max_participants} max
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
+                <p>Created by {project.creator_name}</p>
+                <p>on {formatDate(project.created_at)}</p>
+              </div>
+              
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleViewDetails(project)}
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+          {yourProjects.length === 0 && (
+            <div className="col-span-full text-center py-8">
+              <p className="text-light-text-secondary dark:text-dark-text-secondary">
+                You haven't created or joined any projects yet.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map(project => (
-          <div key={project.id} className="card hover:shadow-lg transition-all duration-300">
-            <div className="mb-4">
-              <div className="flex justify-between items-start">
-                <div className={`inline-block ${getDifficultyColor(project.difficulty)} rounded-full px-3 py-1 text-xs font-medium`}>
-                  {project.difficulty}
+      {/* Explore Projects Section */}
+      <div>
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <h2 className="text-2xl font-bold">Explore Projects</h2>
+          <SearchBar placeholder="Search projects..." />
+          <FilterBar 
+            options={{
+              levels: ['beginner', 'intermediate', 'advanced'],
+              categories: ['frontend', 'backend', 'fullstack', 'mobile'],
+              sortOptions: ['newest', 'popular']
+            }}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProjects.map(project => (
+            <div key={project.id} className="card hover:shadow-lg transition-all duration-300">
+              <div className="mb-4">
+                <div className="flex justify-between items-start">
+                  <div className={`inline-block ${getDifficultyColor(project.difficulty)} rounded-full px-3 py-1 text-xs font-medium`}>
+                    {project.difficulty}
+                  </div>
+                  {isProjectCreator(project.created_by) && (
+                    <button 
+                      onClick={() => handleEditProject(project)}
+                      className="text-gray-500 hover:text-primary-500 transition-colors"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
-                {isProjectCreator(project.created_by) && (
+                <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
+                  {project.description}
+                </p>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {project.tags.map(tag => (
+                  <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Clock className="w-4 h-4 text-gray-500 mr-1" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {project.estimated_hours} hours
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {project.max_participants} max
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
+                <p>Created by {project.creator_name}</p>
+                <p>on {formatDate(project.created_at)}</p>
+              </div>
+              
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleViewDetails(project)}
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Details
+                </button>
+                
+                {!isProjectCreator(project.created_by) && !isProjectParticipant(project.id) && (
                   <button 
-                    onClick={() => handleEditProject(project)}
-                    className="text-gray-500 hover:text-primary-500 transition-colors"
+                    onClick={() => handleJoinProject(project.id)}
+                    className="btn-primary flex-1"
                   >
-                    <Edit className="w-5 h-5" />
+                    Join Project
                   </button>
                 )}
               </div>
-              <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
             </div>
-            
-            <div className="mb-4">
-              <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
-                {project.description}
-              </p>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mb-4">
-              {project.tags.map(tag => (
-                <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
-                  {tag}
-                </span>
-              ))}
-            </div>
-            
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center">
-                <Clock className="w-4 h-4 text-gray-500 mr-1" />
-                <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                  {project.estimated_hours} hours
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                  {project.max_participants} max
-                </span>
-              </div>
-            </div>
-
-            <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
-              <p>Created by {project.creator_name}</p>
-              <p>on {formatDate(project.created_at)}</p>
-            </div>
-            
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleViewDetails(project)}
-                className="btn-secondary flex-1 flex items-center justify-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                View Details
-              </button>
-              
-              {!isProjectCreator(project.created_by) && !isProjectParticipant(project.id) && (
-                <button 
-                  onClick={() => handleJoinProject(project.id)}
-                  className="btn-primary flex-1"
-                >
-                  Join Project
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {isDetailsModalOpen && selectedProject && (
