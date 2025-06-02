@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Clock, Users, ChevronRight, Star, Plus, X, Edit, Eye, MessageSquare } from 'lucide-react';
+import { Search, Filter, Clock, Users, ChevronRight, Star, Plus, X, Edit, Eye, MessageSquare, Trash2 } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import SearchBar from '../components/search/SearchBar';
 import FilterBar from '../components/search/FilterBar';
@@ -250,6 +250,32 @@ function CommunityPage() {
     }
   };
 
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('Are you sure you want to delete this study group? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('study_groups')
+        .delete()
+        .eq('id', groupId)
+        .eq('leader_id', user?.id); // Ensure only the leader can delete
+
+      if (error) throw error;
+
+      // Close any open modals
+      setIsDetailsModalOpen(false);
+      setSelectedGroup(null);
+
+      // Refresh the groups list
+      await loadStudyGroups();
+    } catch (error) {
+      console.error('Error deleting study group:', error);
+      setError('Failed to delete study group. Please try again.');
+    }
+  };
+
   const isGroupLeader = (groupLeaderId: string) => {
     return user?.id === groupLeaderId;
   };
@@ -335,12 +361,20 @@ function CommunityPage() {
                     {group.level}
                   </div>
                   {isGroupLeader(group.leader_id) && (
-                    <button 
-                      onClick={() => handleEditGroup(group)}
-                      className="text-gray-500 hover:text-primary-500 transition-colors"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleEditGroup(group)}
+                        className="text-gray-500 hover:text-primary-500 transition-colors"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteGroup(group.id)}
+                        className="text-red-500 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   )}
                 </div>
                 <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
@@ -424,12 +458,20 @@ function CommunityPage() {
                     {group.level}
                   </div>
                   {isGroupLeader(group.leader_id) && (
-                    <button 
-                      onClick={() => handleEditGroup(group)}
-                      className="text-gray-500 hover:text-primary-500 transition-colors"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => handleEditGroup(group)}
+                        className="text-gray-500 hover:text-primary-500 transition-colors"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteGroup(group.id)}
+                        className="text-red-500 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                   )}
                 </div>
                 <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
@@ -686,15 +728,25 @@ function CommunityPage() {
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 dark:border-dark-border flex justify-between items-center">
               <h2 className="text-2xl font-bold">Study Group Details</h2>
-              <button
-                onClick={() => {
-                  setIsDetailsModalOpen(false);
-                  setSelectedGroup(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-4">
+                {isGroupLeader(selectedGroup.leader_id) && (
+                  <button 
+                    onClick={() => handleDeleteGroup(selectedGroup.id)}
+                    className="text-red-500 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 className="w-6 h-6" />
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setIsDetailsModalOpen(false);
+                    setSelectedGroup(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6">
