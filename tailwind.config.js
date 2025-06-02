@@ -1,9 +1,17 @@
+import defaultTheme from 'tailwindcss/defaultTheme';
+
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Bricolage Grotesque', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         primary: {
           50: '#f0f9ff',
@@ -41,11 +49,6 @@ export default {
           card: '#1e293b',
           border: '#334155',
         },
-        "color-1": "hsl(var(--color-1))",
-        "color-2": "hsl(var(--color-2))",
-        "color-3": "hsl(var(--color-3))",
-        "color-4": "hsl(var(--color-4))",
-        "color-5": "hsl(var(--color-5))"
       },
       boxShadow: {
         'neu-light': '20px 20px 60px #d1d9e6, -20px -20px 60px #ffffff',
@@ -56,16 +59,8 @@ export default {
         'neu-dark-pressed': 'inset 6px 6px 12px #1a2334, inset -6px -6px 12px #222f42',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
       },
-      animation: {
-        'rainbow': 'rainbow var(--speed, 2s) infinite linear',
-      },
-      keyframes: {
-        'rainbow': {
-          '0%': { 'background-position': '0%' },
-          '100%': { 'background-position': '200%' }
-        }
-      }
     },
   },
   plugins: [],
 }
+
