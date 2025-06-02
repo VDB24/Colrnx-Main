@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { BookOpen, Clock, Award, ArrowRight } from 'lucide-react';
+import { BookOpen, Clock, Award, ArrowRight, Users, Brain, Code } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
@@ -18,6 +19,60 @@ function DashboardPage() {
           <h1 className="text-4xl font-bold mb-4">Welcome back, {user?.user_metadata?.name}!</h1>
           <p className="text-xl opacity-90">Continue your learning journey today</p>
         </div>
+      </div>
+
+      {/* Quick Action Buttons */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <Link 
+          to="/projects"
+          className="group bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Code className="w-6 h-6 text-primary-500" />
+            </div>
+            <h3 className="text-xl font-semibold ml-4 group-hover:text-primary-500 transition-colors duration-300">
+              Create Project
+            </h3>
+          </div>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary">
+            Start a new coding project and collaborate with others
+          </p>
+        </Link>
+
+        <Link 
+          to="/community"
+          className="group bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Users className="w-6 h-6 text-primary-500" />
+            </div>
+            <h3 className="text-xl font-semibold ml-4 group-hover:text-primary-500 transition-colors duration-300">
+              Explore Community
+            </h3>
+          </div>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary">
+            Connect with fellow learners and join study groups
+          </p>
+        </Link>
+
+        <Link 
+          to="/learn/ai"
+          className="group bg-white dark:bg-dark-card rounded-2xl p-8 shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+        >
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Brain className="w-6 h-6 text-primary-500" />
+            </div>
+            <h3 className="text-xl font-semibold ml-4 group-hover:text-primary-500 transition-colors duration-300">
+              Learn With AI
+            </h3>
+          </div>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary">
+            Get personalized learning assistance powered by AI
+          </p>
+        </Link>
       </div>
       
       {/* Stats Overview */}
