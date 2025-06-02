@@ -50,6 +50,23 @@ function ProjectsPage() {
     category: ''
   });
 
+  const getDifficultyColor = (difficulty: string): string => {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner':
+        return 'bg-green-100 text-green-800';
+      case 'intermediate':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'advanced':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const isProjectCreator = (createdBy: string): boolean => {
+    return user?.id === createdBy;
+  };
+
   const handleDeleteProject = async (projectId: string) => {
     if (!window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
       return;
