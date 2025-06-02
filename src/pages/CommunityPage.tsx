@@ -38,6 +38,8 @@ function CommunityPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [yourCommunities, setYourCommunities] = useState<StudyGroup[]>([]);
+  const [exploreCommunities, setExploreCommunities] = useState<StudyGroup[]>([]);
 
   const [groupForm, setGroupForm] = useState({
     title: '',
@@ -72,6 +74,15 @@ function CommunityPage() {
 
   const loadStudyGroups = async () => {
     try {
+      // Load groups where user is leader or member
+      const { data: memberData } = await supabase
+        .from('study_group_members')
+        .select('group_id')
+        .eq('user_id', user?.id);
+
+      const memberGroupIds = memberData?.map(m => m.group_id) || [];
+
+      // Get all groups
       const { data: groupsData, error: groupsError } = await supabase
         .from('study_groups')
         .select('*')
@@ -79,13 +90,12 @@ function CommunityPage() {
 
       if (groupsError) throw groupsError;
 
+      // Get leader names
       const leaderIds = [...new Set(groupsData?.map(g => g.leader_id) || [])];
-      const { data: profilesData, error: profilesError } = await supabase
+      const { data: profilesData } = await supabase
         .from('profiles')
         .select('id, name')
         .in('id', leaderIds);
-
-      if (profilesError) throw profilesError;
 
       const leaderMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
 
@@ -93,6 +103,19 @@ function CommunityPage() {
         ...group,
         leader_name: leaderMap.get(group.leader_id) || 'Unknown'
       }));
+
+      // Separate groups into your communities and explore communities
+      setYourCommunities(
+        groupsWithLeaderNames?.filter(group => 
+          group.leader_id === user?.id || memberGroupIds.includes(group.id)
+        ) || []
+      );
+
+      setExploreCommunities(
+        groupsWithLeaderNames?.filter(group => 
+          group.leader_id !== user?.id && !memberGroupIds.includes(group.id)
+        ) || []
+      );
 
       setStudyGroups(groupsWithLeaderNames || []);
     } catch (error) {
@@ -300,92 +323,184 @@ function CommunityPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
-        <SearchBar placeholder="Search study groups..." />
-        <FilterBar 
-          options={{
-            levels: ['beginner', 'intermediate', 'advanced'],
-            categories: ['programming', 'web-development', 'data-science', 'mobile-dev'],
-            sortOptions: ['newest', 'popular']
-          }}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredGroups.map(group => (
-          <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
-            <div className="mb-4">
-              <div className="flex justify-between items-start">
-                <div className={`inline-block ${getDifficultyColor(group.level)} rounded-full px-3 py-1 text-xs font-medium`}>
-                  {group.level}
+      {/* Your Communities Section */}
+      <div className="mb-12">
+        <h2 className="text-2xl font-bold mb-6">Your Communities</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {yourCommunities.map(group => (
+            <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
+              <div className="mb-4">
+                <div className="flex justify-between items-start">
+                  <div className={`inline-block ${getDifficultyColor(group.level)} rounded-full px-3 py-1 text-xs font-medium`}>
+                    {group.level}
+                  </div>
+                  {isGroupLeader(group.leader_id) && (
+                    <button 
+                      onClick={() => handleEditGroup(group)}
+                      className="text-gray-500 hover:text-primary-500 transition-colors"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
-                {isGroupLeader(group.leader_id) && (
+                <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
+                  {group.description}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {group.tags.map(tag => (
+                  <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Clock className="w-4 h-4 text-gray-500 mr-1" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {group.schedule}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {getCurrentMemberCount(group.id)}/{group.max_members}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
+                <p>Led by {group.leader_name}</p>
+                <p>Created on {formatDate(group.created_at)}</p>
+              </div>
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => handleViewDetails(group)}
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Details
+                </button>
+
+                {!isGroupLeader(group.leader_id) && !isGroupMember(group.id) && (
                   <button 
-                    onClick={() => handleEditGroup(group)}
-                    className="text-gray-500 hover:text-primary-500 transition-colors"
+                    onClick={() => handleJoinGroup(group.id)}
+                    className="btn-primary flex-1"
+                    disabled={getCurrentMemberCount(group.id) >= group.max_members}
                   >
-                    <Edit className="w-5 h-5" />
+                    {getCurrentMemberCount(group.id) >= group.max_members ? 'Full' : 'Join Group'}
                   </button>
                 )}
               </div>
-              <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
             </div>
-
-            <div className="mb-4">
-              <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
-                {group.description}
+          ))}
+          {yourCommunities.length === 0 && (
+            <div className="col-span-full text-center py-8">
+              <p className="text-light-text-secondary dark:text-dark-text-secondary">
+                You haven't joined any study groups yet.
               </p>
             </div>
+          )}
+        </div>
+      </div>
 
-            <div className="flex flex-wrap gap-2 mb-4">
-              {group.tags.map(tag => (
-                <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
-                  {tag}
-                </span>
-              ))}
-            </div>
+      {/* Explore Communities Section */}
+      <div>
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <h2 className="text-2xl font-bold">Explore Communities</h2>
+          <SearchBar placeholder="Search study groups..." />
+          <FilterBar 
+            options={{
+              levels: ['beginner', 'intermediate', 'advanced'],
+              categories: ['programming', 'web-development', 'data-science', 'mobile-dev'],
+              sortOptions: ['newest', 'popular']
+            }}
+          />
+        </div>
 
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center">
-                <Clock className="w-4 h-4 text-gray-500 mr-1" />
-                <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                  {group.schedule}
-                </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {exploreCommunities.map(group => (
+            <div key={group.id} className="card hover:shadow-lg transition-all duration-300">
+              <div className="mb-4">
+                <div className="flex justify-between items-start">
+                  <div className={`inline-block ${getDifficultyColor(group.level)} rounded-full px-3 py-1 text-xs font-medium`}>
+                    {group.level}
+                  </div>
+                  {isGroupLeader(group.leader_id) && (
+                    <button 
+                      onClick={() => handleEditGroup(group)}
+                      className="text-gray-500 hover:text-primary-500 transition-colors"
+                    >
+                      <Edit className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+                <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
               </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                  {getCurrentMemberCount(group.id)}/{group.max_members}
-                </span>
+
+              <div className="mb-4">
+                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
+                  {group.description}
+                </p>
               </div>
-            </div>
 
-            <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
-              <p>Led by {group.leader_name}</p>
-              <p>Created on {formatDate(group.created_at)}</p>
-            </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {group.tags.map(tag => (
+                  <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
+                    {tag}
+                  </span>
+                ))}
+              </div>
 
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleViewDetails(group)}
-                className="btn-secondary flex-1 flex items-center justify-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                View Details
-              </button>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Clock className="w-4 h-4 text-gray-500 mr-1" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {group.schedule}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
+                    {getCurrentMemberCount(group.id)}/{group.max_members}
+                  </span>
+                </div>
+              </div>
 
-              {!isGroupLeader(group.leader_id) && !isGroupMember(group.id) && (
+              <div className="text-sm text-light-text-secondary dark:text-dark-text-secondary mb-4">
+                <p>Led by {group.leader_name}</p>
+                <p>Created on {formatDate(group.created_at)}</p>
+              </div>
+
+              <div className="flex gap-2">
                 <button 
-                  onClick={() => handleJoinGroup(group.id)}
-                  className="btn-primary flex-1"
-                  disabled={getCurrentMemberCount(group.id) >= group.max_members}
+                  onClick={() => handleViewDetails(group)}
+                  className="btn-secondary flex-1 flex items-center justify-center gap-2"
                 >
-                  {getCurrentMemberCount(group.id) >= group.max_members ? 'Full' : 'Join Group'}
+                  <Eye className="w-4 h-4" />
+                  View Details
                 </button>
-              )}
+
+                {!isGroupLeader(group.leader_id) && !isGroupMember(group.id) && (
+                  <button 
+                    onClick={() => handleJoinGroup(group.id)}
+                    className="btn-primary flex-1"
+                    disabled={getCurrentMemberCount(group.id) >= group.max_members}
+                  >
+                    {getCurrentMemberCount(group.id) >= group.max_members ? 'Full' : 'Join Group'}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Create/Edit Modal */}
