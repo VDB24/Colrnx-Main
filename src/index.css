@@ -52,11 +52,19 @@
   }
 
   .btn-primary {
-    @apply btn bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/20 dark:shadow-primary-900/30;
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-500/20;
+  }
+
+  .dark .btn-primary {
+    @apply shadow-primary-900/30;
   }
 
   .btn-secondary {
-    @apply btn bg-white text-primary-500 border border-primary-500 hover:bg-primary-50 shadow-lg shadow-primary-500/10 dark:shadow-primary-900/20;
+    @apply btn bg-white text-primary-500 border border-primary-500 hover:bg-primary-50 shadow-lg shadow-primary-500/10;
+  }
+
+  .dark .btn-secondary {
+    @apply shadow-primary-900/20;
   }
 
   .btn-sm {
@@ -64,19 +72,35 @@
   }
 
   .card {
-    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md rounded-xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20 transition-all duration-300 hover:shadow-glass-hover;
+    @apply bg-white/80 backdrop-blur-md rounded-xl shadow-glass border border-white/20 transition-all duration-300 hover:shadow-glass-hover;
+  }
+
+  .dark .card {
+    @apply bg-dark-card/80 shadow-glass-dark border-dark-border/20;
   }
 
   .glass-effect {
-    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20;
+    @apply bg-white/80 backdrop-blur-md shadow-glass border border-white/20;
+  }
+
+  .dark .glass-effect {
+    @apply bg-dark-card/80 shadow-glass-dark border-dark-border/20;
   }
 
   .glass-card {
-    @apply bg-white/90 dark:bg-dark-card/90 backdrop-blur-md rounded-xl shadow-glass dark:shadow-glass-dark border border-white/20 dark:border-dark-border/20 transition-all duration-300 hover:shadow-glass-hover;
+    @apply bg-white/90 backdrop-blur-md rounded-xl shadow-glass border border-white/20 transition-all duration-300 hover:shadow-glass-hover;
+  }
+
+  .dark .glass-card {
+    @apply bg-dark-card/90 shadow-glass-dark border-dark-border/20;
   }
 
   .glass-input {
-    @apply bg-white/70 dark:bg-dark-bg/70 backdrop-blur-md border border-white/20 dark:border-dark-border/20 focus:ring-2 focus:ring-primary-500/50;
+    @apply bg-white/70 backdrop-blur-md border border-white/20 focus:ring-2 focus:ring-primary-500/50;
+  }
+
+  .dark .glass-input {
+    @apply bg-dark-bg/70 border-dark-border/20;
   }
 
   .animate-slide-up {
