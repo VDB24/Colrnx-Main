@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { User, Mail, Lock, BellRing, Settings, CreditCard, HelpCircle, ChevronRight } from 'lucide-react';
+import { User, Mail, Lock, BellRing, Settings, CreditCard, HelpCircle, ChevronRight, Layout } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { useAuth } from '../context/AuthContext';
@@ -265,6 +266,14 @@ function ProfilePage() {
                 </div>
                 
                 <nav className="space-y-1">
+                  <Link
+                    to="/learn"
+                    className="w-full flex items-center px-4 py-2.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-dark-border"
+                  >
+                    <Layout className="w-5 h-5 mr-3" />
+                    <span>Dashboard</span>
+                  </Link>
+
                   <button
                     onClick={() => setActiveTab('profile')}
                     className={`w-full flex items-center px-4 py-2.5 rounded-lg transition-colors ${
