@@ -56,16 +56,30 @@ function ProjectsPage() {
 
   const loadProjects = async () => {
     try {
+      // First, get all projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
-        .select('*, profiles(name)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (projectsError) throw projectsError;
 
+      // Then, get creator profiles for these projects
+      const creatorIds = [...new Set(projectsData?.map(p => p.created_by) || [])];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', creatorIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of creator IDs to names
+      const creatorMap = new Map(profilesData?.map(p => [p.id, p.name]) || []);
+
+      // Combine project data with creator names
       const projectsWithCreatorNames = projectsData?.map(project => ({
         ...project,
-        creator_name: project.profiles?.name || 'Unknown'
+        creator_name: creatorMap.get(project.created_by) || 'Unknown'
       }));
 
       setProjects(projectsWithCreatorNames || []);
