@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
@@ -9,10 +10,14 @@ interface DashboardLayoutProps {
 
 function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const location = useLocation();
 
   const handleSidebarToggle = (collapsed: boolean) => {
     setIsSidebarCollapsed(collapsed);
   };
+
+  // Don't render footer on AI Learning page
+  const showFooter = location.pathname !== '/learn/ai';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -30,7 +35,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </main>
           
-          <Footer />
+          {showFooter && <Footer />}
         </div>
       </div>
     </div>
