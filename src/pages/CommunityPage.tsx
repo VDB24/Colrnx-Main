@@ -74,7 +74,6 @@ function CommunityPage() {
 
   const loadStudyGroups = async () => {
     try {
-      // Load groups where user is leader or member
       const { data: memberData } = await supabase
         .from('study_group_members')
         .select('group_id')
@@ -82,7 +81,6 @@ function CommunityPage() {
 
       const memberGroupIds = memberData?.map(m => m.group_id) || [];
 
-      // Get all groups
       const { data: groupsData, error: groupsError } = await supabase
         .from('study_groups')
         .select('*')
@@ -90,7 +88,6 @@ function CommunityPage() {
 
       if (groupsError) throw groupsError;
 
-      // Get leader names
       const leaderIds = [...new Set(groupsData?.map(g => g.leader_id) || [])];
       const { data: profilesData } = await supabase
         .from('profiles')
@@ -104,7 +101,6 @@ function CommunityPage() {
         leader_name: leaderMap.get(group.leader_id) || 'Unknown'
       }));
 
-      // Separate groups into your communities and explore communities
       setYourCommunities(
         groupsWithLeaderNames?.filter(group => 
           group.leader_id === user?.id || memberGroupIds.includes(group.id)
@@ -323,7 +319,6 @@ function CommunityPage() {
         </div>
       </div>
 
-      {/* Your Communities Section */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold mb-6">Your Communities</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -344,12 +339,6 @@ function CommunityPage() {
                   )}
                 </div>
                 <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
-                  {group.description}
-                </p>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-4">
@@ -401,7 +390,6 @@ function CommunityPage() {
         </div>
       </div>
 
-      {/* Explore Communities Section */}
       <div>
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <h2 className="text-2xl font-bold">Explore Communities</h2>
@@ -433,12 +421,6 @@ function CommunityPage() {
                   )}
                 </div>
                 <h3 className="text-xl font-semibold mt-3">{group.title}</h3>
-              </div>
-
-              <div className="mb-4">
-                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
-                  {group.description}
-                </p>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-4">
@@ -493,7 +475,6 @@ function CommunityPage() {
         </div>
       </div>
 
-      {/* Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -680,7 +661,6 @@ function CommunityPage() {
         </div>
       )}
 
-      {/* Details Modal */}
       {isDetailsModalOpen && selectedGroup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
