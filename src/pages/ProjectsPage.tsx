@@ -227,7 +227,20 @@ function ProjectsPage() {
 
   const handleJoinProject = async (projectId: string) => {
     try {
-      // Get project details first
+      // Check if user is already a participant
+      const { data: existingParticipant } = await supabase
+        .from('project_participants')
+        .select('*')
+        .eq('project_id', projectId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (existingParticipant) {
+        console.warn('User is already a participant in this project');
+        return;
+      }
+
+      // Get project details
       const { data: projectData } = await supabase
         .from('projects')
         .select('*, profiles:created_by(name)')
@@ -245,7 +258,14 @@ function ProjectsPage() {
           }
         ]);
 
-      if (error) throw error;
+      if (error) {
+        // Check if error is due to unique constraint violation
+        if (error.code === '23505') {
+          console.warn('User is already a participant in this project');
+          return;
+        }
+        throw error;
+      }
 
       // Create notification for project creator
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-notification`, {
@@ -267,6 +287,7 @@ function ProjectsPage() {
       }
 
       await loadParticipants();
+      await loadProjects(); // Reload projects to update the UI
     } catch (error) {
       console.error('Error joining project:', error);
     }
@@ -742,7 +763,7 @@ function ProjectsPage() {
                     className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="e.g., React, TypeScript"
                   />
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2  mt-2">
                     {projectForm.tags.map(tag => (
                       <span
                         key={tag}
