@@ -179,10 +179,109 @@ function CommunityPage() {
     }
   };
 
-  // ... rest of the component implementation remains exactly the same ...
-
   return (
-    // ... rest of the JSX remains exactly the same ...
+    <DashboardLayout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col space-y-8">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">Community</h1>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={20} />
+              Create Community
+            </button>
+          </div>
+
+          {/* Search and Filter Section */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <SearchBar />
+            <FilterBar />
+          </div>
+
+          {/* Your Communities Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Your Communities</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {yourCommunities.map((group) => (
+                <div
+                  key={group.id}
+                  className="border dark:border-gray-700 rounded-lg p-4 hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold">{group.title}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(group.level)}`}>
+                      {group.level}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                    {group.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <Users size={16} />
+                      <span>{members.filter(m => m.group_id === group.id).length}/{group.max_members}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedGroup(group);
+                        setIsDetailsModalOpen(true);
+                      }}
+                      className="text-primary hover:text-primary/80 transition-colors"
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Explore Communities Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <h2 className="text-xl font-semibold mb-4">Explore Communities</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className="border dark:border-gray-700 rounded-lg p-4 hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold">{group.title}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(group.level)}`}>
+                      {group.level}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                    {group.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <Users size={16} />
+                        <span>{members.filter(m => m.group_id === group.id).length}/{group.max_members}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <Clock size={16} />
+                        <span>{group.schedule}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleJoinGroup(group.id)}
+                      className="text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Join Group
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }
 
