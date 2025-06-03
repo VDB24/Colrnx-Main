@@ -73,7 +73,6 @@ function ProjectsPage() {
 
   const loadProjects = async () => {
     try {
-      // Load projects where user is creator or participant
       const { data: participantData } = await supabase
         .from('project_participants')
         .select('project_id')
@@ -81,7 +80,6 @@ function ProjectsPage() {
 
       const participatedProjectIds = participantData?.map(p => p.project_id) || [];
 
-      // Get all projects
       const { data: projectsData, error: projectsError } = await supabase
         .from('projects')
         .select('*')
@@ -89,7 +87,6 @@ function ProjectsPage() {
 
       if (projectsError) throw projectsError;
 
-      // Get creator names
       const creatorIds = [...new Set(projectsData?.map(p => p.created_by) || [])];
       const { data: profilesData } = await supabase
         .from('profiles')
@@ -103,7 +100,6 @@ function ProjectsPage() {
         creator_name: creatorMap.get(project.created_by) || 'Unknown'
       }));
 
-      // Separate projects into your projects and explore projects
       setYourProjects(
         projectsWithCreatorNames?.filter(project => 
           project.created_by === user?.id || participatedProjectIds.includes(project.id)
@@ -317,7 +313,6 @@ function ProjectsPage() {
         </div>
       </div>
 
-      {/* Your Projects Section */}
       <div className="mb-12">
         <h2 className="text-2xl font-bold mb-6">Your Projects</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -395,7 +390,6 @@ function ProjectsPage() {
         </div>
       </div>
 
-      {/* Explore Projects Section */}
       <div>
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <h2 className="text-2xl font-bold">Explore Projects</h2>
