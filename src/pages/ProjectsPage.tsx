@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Filter, Clock, Users, ChevronRight, Star, StarHalf, Code, Plus, X, Edit, Eye } from 'lucide-react';
+import { Search, Filter, Clock, Users, ChevronRight, Star, Plus, X, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import SearchBar from '../components/search/SearchBar';
 import FilterBar from '../components/search/FilterBar';
@@ -227,6 +227,14 @@ function ProjectsPage() {
 
   const handleJoinProject = async (projectId: string) => {
     try {
+      // Get project details first
+      const { data: projectData } = await supabase
+        .from('projects')
+        .select('*, profiles:created_by(name)')
+        .eq('id', projectId)
+        .single();
+
+      // Join the project
       const { error } = await supabase
         .from('project_participants')
         .insert([
@@ -238,6 +246,26 @@ function ProjectsPage() {
         ]);
 
       if (error) throw error;
+
+      // Create notification for project creator
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-notification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: projectData.created_by,
+          title: 'New Project Member',
+          content: `${user?.user_metadata?.name || 'A user'} has joined your project "${projectData.title}"`,
+          type: 'info'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create notification');
+      }
+
       await loadParticipants();
     } catch (error) {
       console.error('Error joining project:', error);
@@ -250,6 +278,10 @@ function ProjectsPage() {
 
   const isProjectParticipant = (projectId: string) => {
     return participants.some(p => p.project_id === projectId && p.user_id === user?.id);
+  };
+
+  const getCurrentMemberCount = (projectId: string) => {
+    return participants.filter(m => m.project_id === projectId).length;
   };
 
   const formatDate = (dateString: string) => {
@@ -353,7 +385,7 @@ function ProjectsPage() {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    {project.max_participants} max
+                    {getCurrentMemberCount(project.id)}/{project.max_participants}
                   </span>
                 </div>
               </div>
@@ -435,7 +467,7 @@ function ProjectsPage() {
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-gray-500" />
                   <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                    {project.max_participants} max
+                    {getCurrentMemberCount(project.id)}/{project.max_participants}
                   </span>
                 </div>
               </div>
