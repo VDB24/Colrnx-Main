@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Sun, Moon, Menu, X, Brain } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { NotificationPanel } from '../notifications/NotificationPanel';
 
 function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -59,6 +60,8 @@ function Header() {
                 <Sun className="w-5 h-5 text-[#A7D1F1]" />
               )}
             </button>
+
+            {isAuthenticated && <NotificationPanel />}
 
             {isAuthenticated ? (
               <Link 
