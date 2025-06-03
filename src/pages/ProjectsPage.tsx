@@ -335,12 +335,6 @@ function ProjectsPage() {
                 <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
               </div>
               
-              <div className="mb-4">
-                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
-                  {project.description}
-                </p>
-              </div>
-              
               <div className="flex flex-wrap gap-2 mb-4">
                 {project.tags.map(tag => (
                   <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-xs">
@@ -421,12 +415,6 @@ function ProjectsPage() {
                   )}
                 </div>
                 <h3 className="text-xl font-semibold mt-3">{project.title}</h3>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-light-text-secondary dark:text-dark-text-secondary line-clamp-3 break-words">
-                  {project.description}
-                </p>
               </div>
               
               <div className="flex flex-wrap gap-2 mb-4">
