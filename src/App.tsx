@@ -10,6 +10,7 @@ import ExploreResourcesPage from './pages/ExploreResourcesPage';
 import AILearningPage from './pages/AILearningPage';
 import PortfolioPage from './pages/PortfolioPage';
 import ProfilePage from './pages/ProfilePage';
+import AchievementsPage from './pages/AchievementsPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { useTheme } from './context/ThemeContext';
 import FeaturesPage from './pages/FeaturesPage';
@@ -64,6 +65,11 @@ function App() {
         <Route path="/portfolio" element={
           <ProtectedRoute>
             <PortfolioPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/achievements" element={
+          <ProtectedRoute>
+            <AchievementsPage />
           </ProtectedRoute>
         } />
         <Route path="/profile" element={

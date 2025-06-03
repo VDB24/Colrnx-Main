@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, Users, Code, Layout, BookOpenCheck, Brain, 
-  ChevronDown, ChevronRight, Settings, LogOut, GraduationCap
+  ChevronDown, ChevronRight, Settings, LogOut, GraduationCap,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -170,6 +171,21 @@ function Sidebar({ onToggle }: SidebarProps) {
           );
         })}
 
+        {/* Achievements Link */}
+        <Link
+          to="/achievements"
+          className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+            isActive('/achievements')
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-500'
+              : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-border'
+          }`}
+        >
+          <Trophy className="w-5 h-5 flex-shrink-0" />
+          <span className={`ml-3 truncate transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>
+            Achievements
+          </span>
+        </Link>
+
         {/* Settings Link */}
         <Link
           to="/profile"
@@ -184,6 +200,7 @@ function Sidebar({ onToggle }: SidebarProps) {
             Settings
           </span>
         </Link>
+
         <div className="mt-6 pt-1.5 border-t border-gray-200 dark:border-dark-border"></div>
         {/* Sign Out Button */}
         <button
