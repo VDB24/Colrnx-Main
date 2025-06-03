@@ -51,6 +51,11 @@ function CommunityPage() {
     tags: [] as string[]
   });
 
+  const filterOptions = {
+    levels: ['beginner', 'intermediate', 'advanced'],
+    categories: ['frontend', 'backend', 'fullstack', 'mobile', 'ai', 'data', 'devops', 'cloud', 'security']
+  };
+
   const filteredGroups = useSearchFilter(exploreCommunities, ['title', 'description', 'tags']);
 
   const getDifficultyColor = (level: string) => {
@@ -198,7 +203,7 @@ function CommunityPage() {
           {/* Search and Filter Section */}
           <div className="flex flex-col md:flex-row gap-4">
             <SearchBar />
-            <FilterBar />
+            <FilterBar options={filterOptions} />
           </div>
 
           {/* Your Communities Section */}
