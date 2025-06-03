@@ -46,16 +46,16 @@ const handleJoinGroup = async (groupId: string) => {
     }
 
     // Create notification for group leader
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-notification`, {
+    const response = await fetch(\`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-notification`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Authorization': \`Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         user_id: groupData.leader_id,
         title: 'New Group Member',
-        content: `${user?.user_metadata?.name || 'A user'} has joined your study group "${groupData.title}"`,
+        content: \`${user?.user_metadata?.name || 'A user'} has joined your study group "${groupData.title}"`,
         type: 'info'
       })
     });
