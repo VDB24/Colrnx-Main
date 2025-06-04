@@ -21,7 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      console.error('Error during logout:', error);
+      // Ignore session_not_found errors as they're expected when session is already expired
+      if (error.message && !error.message.includes('session_not_found')) {
+        console.error('Error during logout:', error);
+      }
     } finally {
       setUser(null);
       setIsLoading(false);
