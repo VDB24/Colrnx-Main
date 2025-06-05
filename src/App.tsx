@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import CommunityPage from './pages/CommunityPage';
+import CommunityDetailsPage from './pages/CommunityDetailsPage';
 import CoursesPage from './pages/CoursesPage';
 import ExploreResourcesPage from './pages/ExploreResourcesPage';
 import AILearningPage from './pages/AILearningPage';
@@ -67,6 +68,11 @@ function App() {
         <Route path="/community" element={
           <ProtectedRoute>
             <CommunityPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/community/:id" element={
+          <ProtectedRoute>
+            <CommunityDetailsPage />
           </ProtectedRoute>
         } />
         <Route path="/portfolio" element={
