@@ -15,7 +15,7 @@ interface StudyGroup {
   estimated_hours: number;
   max_participants: number;
   category: string;
-  created_by: string;
+  leader_id: string;
   created_at: string;
   creator_name?: string;
   schedule: string;
@@ -87,7 +87,7 @@ function CommunityDetailsPage() {
         .from('study_groups')
         .select(`
           *,
-          profiles:created_by (
+          profiles:leader_id (
             name
           )
         `)
