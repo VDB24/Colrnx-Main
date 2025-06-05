@@ -23,6 +23,7 @@ interface Project {
   start_date: string | null;
   target_completion_date: string | null;
   creator_name?: string;
+  tags?: string[];
 }
 
 interface Timeline {
@@ -63,12 +64,54 @@ function ProjectDetailsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingTimeline, setEditingTimeline] = useState<Timeline | null>(null);
 
+  // Add new state for modals
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+
+  // Add state for form data
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    status: '',
+    start_date: '',
+    target_completion_date: ''
+  });
+
+  const [resourceForm, setResourceForm] = useState({
+    title: '',
+    description: '',
+    type: 'document',
+    url: ''
+  });
+
+  const [updateForm, setUpdateForm] = useState({
+    title: '',
+    content: '',
+    phase: 'planning',
+    status: 'pending',
+    start_date: '',
+    end_date: ''
+  });
+
   useEffect(() => {
     loadProjectDetails();
     loadParticipants();
     loadTimelines();
     loadResources();
   }, [id]);
+
+  useEffect(() => {
+    if (project) {
+      setEditForm({
+        title: project.title,
+        description: project.description,
+        status: project.status,
+        start_date: project.start_date || '',
+        target_completion_date: project.target_completion_date || ''
+      });
+    }
+  }, [project]);
 
   const loadProjectDetails = async () => {
     try {
@@ -99,7 +142,6 @@ function ProjectDetailsPage() {
 
   const loadParticipants = async () => {
     try {
-      // First, fetch the project participants
       const { data: participantsData, error: participantsError } = await supabase
         .from('project_participants')
         .select('user_id, role, joined_at')
@@ -107,7 +149,6 @@ function ProjectDetailsPage() {
 
       if (participantsError) throw participantsError;
 
-      // Then, fetch the profiles for these participants
       const userIds = participantsData.map(p => p.user_id);
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
@@ -116,7 +157,6 @@ function ProjectDetailsPage() {
 
       if (profilesError) throw profilesError;
 
-      // Combine the data
       const participantsWithProfiles = participantsData.map(participant => {
         const profile = profilesData.find(p => p.id === participant.user_id);
         return {
@@ -181,6 +221,82 @@ function ProjectDetailsPage() {
     } catch (error) {
       console.error('Error updating timeline:', error);
       toast.error('Failed to update timeline');
+    }
+  };
+
+  const handleEditProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update(editForm)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Project updated successfully');
+      loadProjectDetails();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating project:', error);
+      toast.error('Failed to update project');
+    }
+  };
+
+  const handleAddResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from('project_resources')
+        .insert([{
+          ...resourceForm,
+          project_id: id,
+          created_by: user?.id
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Resource added successfully');
+      loadResources();
+      setIsResourceModalOpen(false);
+      setResourceForm({
+        title: '',
+        description: '',
+        type: 'document',
+        url: ''
+      });
+    } catch (error) {
+      console.error('Error adding resource:', error);
+      toast.error('Failed to add resource');
+    }
+  };
+
+  const handleAddUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase
+        .from('project_timelines')
+        .insert([{
+          ...updateForm,
+          project_id: id
+        }]);
+
+      if (error) throw error;
+
+      toast.success('Timeline updated successfully');
+      loadTimelines();
+      setIsUpdateModalOpen(false);
+      setUpdateForm({
+        title: '',
+        content: '',
+        phase: 'planning',
+        status: 'pending',
+        start_date: '',
+        end_date: ''
+      });
+    } catch (error) {
+      console.error('Error adding update:', error);
+      toast.error('Failed to add update');
     }
   };
 
@@ -414,7 +530,7 @@ function ProjectDetailsPage() {
                 <h2 className="text-xl font-semibold">Resources</h2>
                 {isProjectCreator() && (
                   <button
-                    onClick={() => {/* Add resource modal */}}
+                    onClick={() => setIsResourceModalOpen(true)}
                     className="btn-secondary flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -492,6 +608,41 @@ function ProjectDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Components */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 p-6">
+            <h2 className="text-2xl font-bold mb-6">Edit Project</h2>
+            <form onSubmit={handleEditProject}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={editForm.title}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
