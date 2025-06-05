@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Clock, Users, ChevronRight, Star, Plus, X, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import SearchBar from '../components/search/SearchBar';
@@ -28,6 +29,7 @@ interface ProjectParticipant {
 }
 
 function ProjectsPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [yourProjects, setYourProjects] = useState<Project[]>([]);
@@ -209,9 +211,7 @@ function ProjectsPage() {
   };
 
   const handleViewDetails = (project: Project) => {
-    setSelectedProject(project);
-    setIsDetailsModalOpen(true);
-    setIsEditing(false);
+    navigate(`/projects/${project.id}`);
   };
 
   const handleEditProject = (project: Project) => {
@@ -545,107 +545,6 @@ function ProjectsPage() {
           ))}
         </div>
       </div>
-
-      {isDetailsModalOpen && selectedProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-dark-border flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Project Details</h2>
-              <button
-                onClick={() => {
-                  setIsDetailsModalOpen(false);
-                  setSelectedProject(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <div className={`inline-block ${getDifficultyColor(selectedProject.difficulty)} rounded-full px-3 py-1 text-xs font-medium mb-2`}>
-                    {selectedProject.difficulty}
-                  </div>
-                  <h3 className="text-2xl font-bold">{selectedProject.title}</h3>
-                </div>
-                {isProjectCreator(selectedProject.created_by) && (
-                  <button 
-                    onClick={() => {
-                      handleEditProject(selectedProject);
-                      setIsDetailsModalOpen(false);
-                    }}
-                    className="btn-secondary flex items-center gap-2"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit Project
-                  </button>
-                )}
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-2">Description</h4>
-                  <p className="text-light-text-secondary dark:text-dark-text-secondary whitespace-pre-wrap break-words">
-                    {selectedProject.description}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Technologies</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedProject.tags.map(tag => (
-                      <span key={tag} className="bg-gray-100 dark:bg-dark-border text-gray-800 dark:text-gray-200 px-2 py-1 rounded-md text-sm">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold mb-2">Project Details</h4>
-                    <ul className="space-y-2 text-light-text-secondary dark:text-dark-text-secondary">
-                      <li className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        Estimated: {selectedProject.estimated_hours} hours
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        Team Size: {selectedProject.max_participants} members
-                      </li>
-                      <li>Category: {selectedProject.category}</li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">Creator Information</h4>
-                    <ul className="space-y-2 text-light-text-secondary dark:text-dark-text-secondary">
-                      <li>Created by: {selectedProject.creator_name}</li>
-                      <li>Created on: {formatDate(selectedProject.created_at)}</li>
-                    </ul>
-                  </div>
-                </div>
-
-                {!isProjectCreator(selectedProject.created_by) && !isProjectParticipant(selectedProject.id) && (
-                  <div className="mt-8">
-                    <button 
-                      onClick={() => {
-                        handleJoinProject(selectedProject.id);
-                        setIsDetailsModalOpen(false);
-                      }}
-                      className="btn-primary w-full"
-                    >
-                      Join Project
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
