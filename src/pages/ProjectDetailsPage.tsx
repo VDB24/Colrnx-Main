@@ -48,9 +48,7 @@ interface Participant {
   user_id: string;
   role: string;
   joined_at: string;
-  profiles: {
-    name: string;
-  };
+  name: string;
 }
 
 function ProjectDetailsPage() {
@@ -101,20 +99,33 @@ function ProjectDetailsPage() {
 
   const loadParticipants = async () => {
     try {
-      const { data, error } = await supabase
+      // First, fetch the project participants
+      const { data: participantsData, error: participantsError } = await supabase
         .from('project_participants')
-        .select(`
-          user_id,
-          role,
-          joined_at,
-          profiles:user_id (
-            name
-          )
-        `)
+        .select('user_id, role, joined_at')
         .eq('project_id', id);
 
-      if (error) throw error;
-      setParticipants(data);
+      if (participantsError) throw participantsError;
+
+      // Then, fetch the profiles for these participants
+      const userIds = participantsData.map(p => p.user_id);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Combine the data
+      const participantsWithProfiles = participantsData.map(participant => {
+        const profile = profilesData.find(p => p.id === participant.user_id);
+        return {
+          ...participant,
+          name: profile?.name || 'Unknown User'
+        };
+      });
+
+      setParticipants(participantsWithProfiles);
     } catch (error) {
       console.error('Error loading participants:', error);
       toast.error('Failed to load participants');
@@ -466,7 +477,7 @@ function ProjectDetailsPage() {
                     className="flex items-center justify-between"
                   >
                     <div>
-                      <p className="font-medium">{participant.profiles.name}</p>
+                      <p className="font-medium">{participant.name}</p>
                       <p className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
                         {participant.role === 'creator' ? 'Project Creator' : 'Contributor'}
                       </p>
