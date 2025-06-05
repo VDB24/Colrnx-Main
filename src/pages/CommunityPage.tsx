@@ -211,9 +211,7 @@ function CommunityPage() {
   };
 
   const handleViewDetails = (group: StudyGroup) => {
-    setSelectedGroup(group);
-    setIsDetailsModalOpen(true);
-    setIsEditing(false);
+    navigate(`/community/${group.id}`);
   };
 
   const handleEditGroup = (group: StudyGroup) => {
