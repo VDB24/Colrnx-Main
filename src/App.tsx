@@ -4,8 +4,8 @@ import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
+import ProjectDetailsPage from './pages/ProjectDetailsPage';
 import CommunityPage from './pages/CommunityPage';
-import CommunityDetailsPage from './pages/CommunityDetailsPage';
 import CoursesPage from './pages/CoursesPage';
 import ExploreResourcesPage from './pages/ExploreResourcesPage';
 import AILearningPage from './pages/AILearningPage';
@@ -59,14 +59,14 @@ function App() {
             <ProjectsPage />
           </ProtectedRoute>
         } />
+        <Route path="/projects/:id" element={
+          <ProtectedRoute>
+            <ProjectDetailsPage />
+          </ProtectedRoute>
+        } />
         <Route path="/community" element={
           <ProtectedRoute>
             <CommunityPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/community/:id" element={
-          <ProtectedRoute>
-            <CommunityDetailsPage />
           </ProtectedRoute>
         } />
         <Route path="/portfolio" element={
@@ -90,4 +90,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
