@@ -813,3 +813,5 @@ function CommunityPage() {
 }
 
 export default CommunityPage;
+
+export default CommunityPage
