@@ -33,6 +33,8 @@ interface Timeline {
   status: 'pending' | 'in_progress' | 'completed';
   start_date: string | null;
   end_date: string | null;
+  description?: string;
+  attachments?: string[];
 }
 
 interface Resource {
@@ -43,6 +45,7 @@ interface Resource {
   url: string | null;
   created_by: string;
   created_at: string;
+  tags?: string[];
 }
 
 interface Participant {
@@ -61,37 +64,42 @@ function ProjectDetailsPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [activePhase, setActivePhase] = useState<string>('planning');
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingTimeline, setEditingTimeline] = useState<Timeline | null>(null);
 
-  // Add new state for modals
+  // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
-  // Add state for form data
+  // Form states
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
     status: '',
     start_date: '',
-    target_completion_date: ''
+    target_completion_date: '',
+    difficulty: '',
+    category: '',
+    estimated_hours: 0,
+    max_participants: 0,
+    tags: [] as string[]
   });
 
   const [resourceForm, setResourceForm] = useState({
     title: '',
     description: '',
-    type: 'document',
-    url: ''
+    type: 'document' as const,
+    url: '',
+    tags: [] as string[]
   });
 
   const [updateForm, setUpdateForm] = useState({
-    title: '',
+    phase: 'planning' as const,
     content: '',
-    phase: 'planning',
-    status: 'pending',
+    status: 'pending' as const,
     start_date: '',
-    end_date: ''
+    end_date: '',
+    description: '',
+    attachments: [] as string[]
   });
 
   useEffect(() => {
@@ -108,7 +116,12 @@ function ProjectDetailsPage() {
         description: project.description,
         status: project.status,
         start_date: project.start_date || '',
-        target_completion_date: project.target_completion_date || ''
+        target_completion_date: project.target_completion_date || '',
+        difficulty: project.difficulty,
+        category: project.category,
+        estimated_hours: project.estimated_hours,
+        max_participants: project.max_participants,
+        tags: project.tags || []
       });
     }
   }, [project]);
@@ -144,28 +157,24 @@ function ProjectDetailsPage() {
     try {
       const { data: participantsData, error: participantsError } = await supabase
         .from('project_participants')
-        .select('user_id, role, joined_at')
+        .select(`
+          user_id,
+          role,
+          joined_at,
+          profiles:user_id (
+            name
+          )
+        `)
         .eq('project_id', id);
 
       if (participantsError) throw participantsError;
 
-      const userIds = participantsData.map(p => p.user_id);
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', userIds);
-
-      if (profilesError) throw profilesError;
-
-      const participantsWithProfiles = participantsData.map(participant => {
-        const profile = profilesData.find(p => p.id === participant.user_id);
-        return {
-          ...participant,
-          name: profile?.name || 'Unknown User'
-        };
-      });
-
-      setParticipants(participantsWithProfiles);
+      setParticipants(
+        participantsData.map(p => ({
+          ...p,
+          name: p.profiles.name
+        }))
+      );
     } catch (error) {
       console.error('Error loading participants:', error);
       toast.error('Failed to load participants');
@@ -201,26 +210,6 @@ function ProjectDetailsPage() {
     } catch (error) {
       console.error('Error loading resources:', error);
       toast.error('Failed to load resources');
-    }
-  };
-
-  const handleTimelineUpdate = async (timeline: Timeline) => {
-    try {
-      const { error } = await supabase
-        .from('project_timelines')
-        .upsert({
-          ...timeline,
-          project_id: id
-        });
-
-      if (error) throw error;
-
-      toast.success('Timeline updated successfully');
-      loadTimelines();
-      setEditingTimeline(null);
-    } catch (error) {
-      console.error('Error updating timeline:', error);
-      toast.error('Failed to update timeline');
     }
   };
 
@@ -263,7 +252,8 @@ function ProjectDetailsPage() {
         title: '',
         description: '',
         type: 'document',
-        url: ''
+        url: '',
+        tags: []
       });
     } catch (error) {
       console.error('Error adding resource:', error);
@@ -287,36 +277,17 @@ function ProjectDetailsPage() {
       loadTimelines();
       setIsUpdateModalOpen(false);
       setUpdateForm({
-        title: '',
-        content: '',
         phase: 'planning',
+        content: '',
         status: 'pending',
         start_date: '',
-        end_date: ''
+        end_date: '',
+        description: '',
+        attachments: []
       });
     } catch (error) {
       console.error('Error adding update:', error);
       toast.error('Failed to add update');
-    }
-  };
-
-  const handleResourceAdd = async (resource: Partial<Resource>) => {
-    try {
-      const { error } = await supabase
-        .from('project_resources')
-        .insert([{
-          ...resource,
-          project_id: id,
-          created_by: user?.id
-        }]);
-
-      if (error) throw error;
-
-      toast.success('Resource added successfully');
-      loadResources();
-    } catch (error) {
-      console.error('Error adding resource:', error);
-      toast.error('Failed to add resource');
     }
   };
 
@@ -368,17 +339,12 @@ function ProjectDetailsPage() {
                   <Calendar className="w-4 h-4 mr-2" />
                   Created {formatDate(project.created_at)}
                 </span>
-                <span>•</span>
-                <span className="flex items-center">
-                  <Clock className="w-4 h-4 mr-2" />
-                  {project.estimated_hours} hours
-                </span>
               </div>
             </div>
             
             {isProjectCreator() && (
               <button
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => setIsEditModalOpen(true)}
                 className="btn-secondary flex items-center gap-2"
               >
                 <Edit className="w-4 h-4" />
@@ -387,44 +353,9 @@ function ProjectDetailsPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="col-span-3">
-              <h2 className="text-xl font-semibold mb-3">About This Project</h2>
-              <p className="text-light-text-secondary dark:text-dark-text-secondary whitespace-pre-wrap">
-                {project.description}
-              </p>
-            </div>
-            
-            <div>
-              <div className="bg-gray-50 dark:bg-dark-border rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Project Status</h3>
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                      Current Phase
-                    </span>
-                    <p className="font-medium capitalize">{project.status}</p>
-                  </div>
-                  {project.start_date && (
-                    <div>
-                      <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                        Started
-                      </span>
-                      <p className="font-medium">{formatDate(project.start_date)}</p>
-                    </div>
-                  )}
-                  {project.target_completion_date && (
-                    <div>
-                      <span className="text-sm text-light-text-secondary dark:text-dark-text-secondary">
-                        Target Completion
-                      </span>
-                      <p className="font-medium">{formatDate(project.target_completion_date)}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+          <p className="text-light-text-secondary dark:text-dark-text-secondary mb-6">
+            {project.description}
+          </p>
 
           <div className="flex flex-wrap gap-2">
             <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
@@ -459,7 +390,7 @@ function ProjectDetailsPage() {
                 <h2 className="text-xl font-semibold">Project Timeline</h2>
                 {isProjectCreator() && (
                   <button
-                    onClick={() => setEditingTimeline({ phase: activePhase } as Timeline)}
+                    onClick={() => setIsUpdateModalOpen(true)}
                     className="btn-secondary flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
@@ -574,12 +505,6 @@ function ProjectDetailsPage() {
                     </div>
                   </div>
                 ))}
-
-                {resources.length === 0 && (
-                  <p className="text-center text-light-text-secondary dark:text-dark-text-secondary py-4">
-                    No resources added yet
-                  </p>
-                )}
               </div>
             </div>
 
@@ -609,25 +534,95 @@ function ProjectDetailsPage() {
         </div>
       </div>
 
-      {/* Modal Components */}
+      {/* Edit Project Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 p-6">
-            <h2 className="text-2xl font-bold mb-6">Edit Project</h2>
-            <form onSubmit={handleEditProject}>
-              <div className="space-y-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Edit Project</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditProject} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">Title</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Title</label>
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  >
+                    <option value="planning">Planning</option>
+                    <option value="development">Development</option>
+                    <option value="testing">Testing</option>
+                    <option value="launched">Launched</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Difficulty</label>
+                  <select
+                    value={editForm.difficulty}
+                    onChange={(e) => setEditForm({ ...editForm, difficulty: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  >
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Start Date</label>
                   <input
-                    type="text"
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg"
-                    required
+                    type="date"
+                    value={editForm.start_date.split('T')[0]}
+                    onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Target Completion</label>
+                  <input
+                    type="date"
+                    value={editForm.target_completion_date.split('T')[0]}
+                    onChange={(e) => setEditForm({ ...editForm, target_completion_date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-4 mt-6">
+
+              <div className="flex justify-end gap-4">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
@@ -637,6 +632,175 @@ function ProjectDetailsPage() {
                 </button>
                 <button type="submit" className="btn-primary">
                   Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Resource Modal */}
+      {isResourceModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Add Resource</h2>
+              <button
+                onClick={() => setIsResourceModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddResource} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">Title</label>
+                <input
+                  type="text"
+                  value={resourceForm.title}
+                  onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  value={resourceForm.description}
+                  onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <select
+                  value={resourceForm.type}
+                  onChange={(e) => setResourceForm({ ...resourceForm, type: e.target.value as 'document' | 'link' | 'forum' })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                >
+                  <option value="document">Document</option>
+                  <option value="link">Link</option>
+                  <option value="forum">Forum</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">URL</label>
+                <input
+                  type="url"
+                  value={resourceForm.url}
+                  onChange={(e) => setResourceForm({ ...resourceForm, url: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  placeholder="https://"
+                />
+              </div>
+
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsResourceModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Add Resource
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Update Modal */}
+      {isUpdateModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-dark-card rounded-xl shadow-xl w-full max-w-2xl mx-4 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Add Timeline Update</h2>
+              <button
+                onClick={() => setIsUpdateModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddUpdate} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">Phase</label>
+                <select
+                  value={updateForm.phase}
+                  onChange={(e) => setUpdateForm({ ...updateForm, phase: e.target.value as Timeline['phase'] })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                >
+                  <option value="planning">Planning</option>
+                  <option value="development">Development</option>
+                  <option value="testing">Testing</option>
+                  <option value="launch">Launch</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Content</label>
+                <textarea
+                  value={updateForm.content}
+                  onChange={(e) => setUpdateForm({ ...updateForm, content: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    value={updateForm.start_date}
+                    onChange={(e) => setUpdateForm({ ...updateForm, start_date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">End Date</label>
+                  <input
+                    type="date"
+                    value={updateForm.end_date}
+                    onChange={(e) => setUpdateForm({ ...updateForm, end_date: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={updateForm.status}
+                  onChange={(e) => setUpdateForm({ ...updateForm, status: e.target.value as Timeline['status'] })}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsUpdateModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Add Update
                 </button>
               </div>
             </form>
