@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Clock, Users, ChevronRight, Star, Plus, X, Edit, Eye, MessageSquare } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import SearchBar from '../components/search/SearchBar';
@@ -29,6 +30,7 @@ interface StudyGroupMember {
 }
 
 function CommunityPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([]);
   const [yourCommunities, setYourCommunities] = useState<StudyGroup[]>([]);
