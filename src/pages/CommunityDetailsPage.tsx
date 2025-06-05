@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, Users, ChevronLeft, Image as ImageIcon, Link as LinkIcon, Send, Trash } from 'lucide-react';
+import { Clock, Users, ChevronLeft, Image as ImageIcon, Link as LinkIcon, Send, Trash, X } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -24,7 +24,7 @@ interface StudyGroup {
 interface Post {
   id: string;
   content: string;
-  image_url?: string;
+  image_path?: string;
   link_url?: string;
   created_at: string;
   user_id: string;
@@ -48,9 +48,11 @@ function CommunityDetailsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState({
     content: '',
-    image_url: '',
     link_url: ''
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -156,29 +158,77 @@ function CommunityDetailsPage() {
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmitPost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPost.content.trim()) return;
 
     setIsSubmitting(true);
     try {
+      let imagePath = null;
+
+      // Upload image if selected
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('study-group-posts')
+          .upload(filePath, selectedImage);
+
+        if (uploadError) throw uploadError;
+        imagePath = filePath;
+      }
+
+      // Create post
       const { error } = await supabase
         .from('study_group_posts')
         .insert([
           {
             group_id: id,
             user_id: user?.id,
-            ...newPost
+            content: newPost.content,
+            image_path: imagePath,
+            link_url: newPost.link_url
           }
         ]);
 
       if (error) throw error;
 
+      // Reset form
       setNewPost({
         content: '',
-        image_url: '',
         link_url: ''
       });
+      handleRemoveImage();
       toast.success('Post created successfully');
     } catch (error) {
       console.error('Error creating post:', error);
@@ -188,14 +238,24 @@ function CommunityDetailsPage() {
     }
   };
 
-  const handleDeletePost = async (postId: string) => {
+  const handleDeletePost = async (post: Post) => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
 
     try {
+      // Delete image if exists
+      if (post.image_path) {
+        const { error: storageError } = await supabase.storage
+          .from('study-group-posts')
+          .remove([post.image_path]);
+
+        if (storageError) throw storageError;
+      }
+
+      // Delete post
       const { error } = await supabase
         .from('study_group_posts')
         .delete()
-        .eq('id', postId);
+        .eq('id', post.id);
 
       if (error) throw error;
 
@@ -204,6 +264,12 @@ function CommunityDetailsPage() {
       console.error('Error deleting post:', error);
       toast.error('Failed to delete post');
     }
+  };
+
+  const getImageUrl = (imagePath: string) => {
+    return supabase.storage
+      .from('study-group-posts')
+      .getPublicUrl(imagePath).data.publicUrl;
   };
 
   const isGroupLeader = () => {
@@ -278,14 +344,25 @@ function CommunityDetailsPage() {
                     rows={4}
                   ></textarea>
 
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="relative mb-4">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="rounded-lg max-h-64 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex gap-4 mb-4">
-                    <input
-                      type="url"
-                      value={newPost.image_url}
-                      onChange={(e) => setNewPost({ ...newPost, image_url: e.target.value })}
-                      placeholder="Image URL (optional)"
-                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    />
                     <input
                       type="url"
                       value={newPost.link_url}
@@ -297,8 +374,16 @@ function CommunityDetailsPage() {
 
                   <div className="flex justify-between items-center">
                     <div className="flex gap-4">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
                       <button
                         type="button"
+                        onClick={() => fileInputRef.current?.click()}
                         className="text-gray-500 hover:text-primary-500 transition-colors"
                         title="Add Image"
                       >
@@ -348,7 +433,7 @@ function CommunityDetailsPage() {
                       </div>
                       {post.user_id === user?.id && (
                         <button
-                          onClick={() => handleDeletePost(post.id)}
+                          onClick={() => handleDeletePost(post)}
                           className="text-red-500 hover:text-red-600 transition-colors"
                         >
                           <Trash className="w-5 h-5" />
@@ -358,9 +443,9 @@ function CommunityDetailsPage() {
 
                     <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
 
-                    {post.image_url && (
+                    {post.image_path && (
                       <img
-                        src={post.image_url}
+                        src={getImageUrl(post.image_path)}
                         alt="Post attachment"
                         className="rounded-lg mb-4 max-h-96 object-cover"
                       />
