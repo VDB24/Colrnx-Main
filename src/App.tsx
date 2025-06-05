@@ -5,6 +5,7 @@ import SignUpPage from './pages/SignUpPage';
 import DashboardPage from './pages/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage';
 import CommunityPage from './pages/CommunityPage';
+import CommunityDetailsPage from './pages/CommunityDetailsPage';
 import CoursesPage from './pages/CoursesPage';
 import ExploreResourcesPage from './pages/ExploreResourcesPage';
 import AILearningPage from './pages/AILearningPage';
@@ -63,6 +64,11 @@ function App() {
             <CommunityPage />
           </ProtectedRoute>
         } />
+        <Route path="/community/:id" element={
+          <ProtectedRoute>
+            <CommunityDetailsPage />
+          </ProtectedRoute>
+        } />
         <Route path="/portfolio" element={
           <ProtectedRoute>
             <PortfolioPage />
@@ -83,5 +89,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
